@@ -15,21 +15,31 @@ module.exports = (sequelize, DataTypes) => {
       User.hasMany(models.Registration, { foreignKey: 'studentId' })
     }
   }
-  User.init({
-    name: DataTypes.STRING,
-    email: DataTypes.STRING,
-    password: DataTypes.STRING,
-    nickname: DataTypes.STRING,
-    avatar: DataTypes.STRING,
-    totalStudy: DataTypes.NUMBER,
-    isTeacher: DataTypes.BOOLEAN,
-    teachStyle: DataTypes.STRING,
-    selfIntro: DataTypes.TEXT
-  }, {
-    sequelize,
-    underscored: true,
-    modelName: 'User',
-    tableName: 'Users'
-  })
+  User.init(
+    {
+      name: DataTypes.STRING,
+      email: DataTypes.STRING,
+      password: DataTypes.STRING,
+      nickname: DataTypes.STRING,
+      avatar: DataTypes.STRING,
+      totalStudy: DataTypes.NUMBER,
+      isTeacher: DataTypes.BOOLEAN,
+      teachStyle: DataTypes.STRING,
+      selfIntro: DataTypes.TEXT,
+      mon: DataTypes.BOOLEAN,
+      tue: DataTypes.BOOLEAN,
+      wed: DataTypes.BOOLEAN,
+      thu: DataTypes.BOOLEAN,
+      fri: DataTypes.BOOLEAN,
+      sat: DataTypes.BOOLEAN,
+      sun: DataTypes.BOOLEAN
+    },
+    {
+      sequelize,
+      underscored: true,
+      modelName: 'User',
+      tableName: 'Users'
+    }
+  )
   return User
 }
