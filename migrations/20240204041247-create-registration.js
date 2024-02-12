@@ -3,21 +3,22 @@
 module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.sequelize.query(`
-    CREATE TABLE IF NOT EXISTS Registrations (
-      id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-      student_id INT NOT NULL,
-      course_id INT NOT NULL,
-      rating INT,
-      comment TEXT,
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      CONSTRAINT registrations_fk_user_id FOREIGN KEY (student_id) REFERENCES Users(id),
-      CONSTRAINT registrations_fk_courses_id FOREIGN KEY (course_id) REFERENCES Courses(id)
-    )`)
+      CREATE TABLE IF NOT EXISTS Registrations (
+        id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+        student_id INT NOT NULL,
+        course_id INT NOT NULL,
+        rating INT,
+        comment TEXT,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT registrations_fk_user_id FOREIGN KEY (student_id) REFERENCES Users(id),
+        CONSTRAINT registrations_fk_courses_id FOREIGN KEY (course_id) REFERENCES Courses(id)
+      )`
+    )
   },
   async down (queryInterface, Sequelize) {
     await queryInterface.sequelize.query(`
-    DROP TABLE IF EXISTS Registrations`
+      DROP TABLE IF EXISTS Registrations`
     )
   }
 }

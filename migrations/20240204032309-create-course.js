@@ -3,26 +3,27 @@
 module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.sequelize.query(`
-    CREATE TABLE IF NOT EXISTS Courses (
-      id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-      teacher_id INT NOT NULL,
-      category_id INT NOT NULL,
-      name VARCHAR(80) NOT NULL,
-      intro TEXT NOT NULL,
-      link VARCHAR(255) NOT NULL,
-      duration INT NOT NULL,
-      price INT DEFAULT 0 NOT NULL,
-      image VARCHAR(255),
-      start_at DATETIME NOT NULL,
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      CONSTRAINT courses_fk_user_id FOREIGN KEY (teacher_id) REFERENCES Users(id),
-      CONSTRAINT courses_fk_category_id FOREIGN KEY (category_id) REFERENCES Categories(id) ON UPDATE CASCADE
-    )`)
+      CREATE TABLE IF NOT EXISTS Courses (
+        id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+        teacher_id INT NOT NULL,
+        category_id INT NOT NULL,
+        name VARCHAR(80) NOT NULL,
+        intro TEXT NOT NULL,
+        link VARCHAR(255) NOT NULL,
+        duration INT NOT NULL,
+        price INT DEFAULT 0 NOT NULL,
+        image VARCHAR(255),
+        start_at DATETIME NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        CONSTRAINT courses_fk_user_id FOREIGN KEY (teacher_id) REFERENCES Users(id),
+        CONSTRAINT courses_fk_category_id FOREIGN KEY (category_id) REFERENCES Categories(id) ON UPDATE CASCADE
+      )`
+    )
   },
   async down (queryInterface, Sequelize) {
     await queryInterface.sequelize.query(`
-    DROP TABLE IF EXISTS Courses`
+      DROP TABLE IF EXISTS Courses`
     )
   }
 }
