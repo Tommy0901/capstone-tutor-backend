@@ -69,5 +69,18 @@ module.exports = {
       }
     }
     return pastCourseDates // 找出老師過去可上課的時間
+  },
+
+  deDuplicateCourseDates (randomDatesArr, availableDates, limit, index) {
+    if (randomDatesArr.length < limit) {
+      randomDatesArr
+        .push(availableDates[Math.floor(Math.random() * availableDates.length)])
+      return randomDatesArr[index]
+    } else {
+      let randomDate = availableDates[Math.floor(Math.random() * availableDates.length)]
+      do { randomDate = availableDates[Math.floor(Math.random() * availableDates.length)] }
+      while (randomDate === randomDatesArr[index])
+      return randomDate
+    }
   }
 }

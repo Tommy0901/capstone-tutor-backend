@@ -1,6 +1,6 @@
 'use strict'
 const { faker } = require('@faker-js/faker')
-const { upcomingCourseDates, pastCourseDates } = require('../helpers/time-helpers')
+const { upcomingCourseDates, pastCourseDates, deDuplicateCourseDates } = require('../helpers/time-helpers')
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
@@ -13,12 +13,12 @@ module.exports = {
     ])
     const { length } = teachers
     const courses = []
+    const historicalCourseDates = []
+    const futureCourseDates = []
 
     for (let i = 0; i < 2; i++) {
       courses.push(...Array.from({ length }, (_, i) => {
         const { id: teacher_id, ...whichDay } = teachers[i]
-        const availableHours = pastCourseDates(whichDay)
-        const start_at = availableHours[Math.floor(Math.random() * availableHours.length)]
         return {
           teacher_id,
           category_id: categories[Math.floor(Math.random() * categories.length)].id,
@@ -26,7 +26,7 @@ module.exports = {
           intro: faker.lorem.paragraph(),
           link: faker.internet.url(),
           duration: Math.floor(Math.random() * 2) ? 30 : 60,
-          start_at
+          start_at: deDuplicateCourseDates(historicalCourseDates, pastCourseDates(whichDay), length, i)
         }
       }))
     }
@@ -34,8 +34,6 @@ module.exports = {
     for (let i = 0; i < 2; i++) {
       courses.push(...Array.from({ length }, (_, i) => {
         const { id: teacher_id, ...whichDay } = teachers[i]
-        const availableHours = upcomingCourseDates(whichDay)
-        const start_at = availableHours[Math.floor(Math.random() * availableHours.length)]
         return {
           teacher_id,
           category_id: categories[Math.floor(Math.random() * categories.length)].id,
@@ -43,7 +41,7 @@ module.exports = {
           intro: faker.lorem.paragraph(),
           link: faker.internet.url(),
           duration: Math.floor(Math.random() * 2) ? 30 : 60,
-          start_at
+          start_at: deDuplicateCourseDates(futureCourseDates, upcomingCourseDates(whichDay), length, i)
         }
       }))
     }
