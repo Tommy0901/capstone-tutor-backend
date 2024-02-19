@@ -18,14 +18,15 @@ module.exports = {
 
     for (let i = 0; i < 2; i++) {
       courses.push(...Array.from({ length }, (_, i) => {
-        const { id: teacher_id, ...whichDay } = teachers[i]
+        const { id: teacherId, ...whichDay } = teachers[i]
         return {
-          teacher_id,
+          teacher_id: teacherId,
           category_id: categories[Math.floor(Math.random() * categories.length)].id,
           name: faker.lorem.word(),
           intro: faker.lorem.paragraph(),
           link: faker.internet.url(),
           duration: Math.floor(Math.random() * 2) ? 30 : 60,
+          image: 'https://fakeimg.pl/300/?text=course%20img',
           start_at: deDuplicateCourseDates(historicalCourseDates, pastCourseDates(whichDay), length, i)
         }
       }))
@@ -33,14 +34,15 @@ module.exports = {
 
     for (let i = 0; i < 2; i++) {
       courses.push(...Array.from({ length }, (_, i) => {
-        const { id: teacher_id, ...whichDay } = teachers[i]
+        const { id: teacherId, ...whichDay } = teachers[i]
         return {
-          teacher_id,
+          teacher_id: teacherId,
           category_id: categories[Math.floor(Math.random() * categories.length)].id,
           name: faker.lorem.word(),
           intro: faker.lorem.paragraph(),
           link: faker.internet.url(),
           duration: Math.floor(Math.random() * 2) ? 30 : 60,
+          image: 'https://fakeimg.pl/300/?text=course%20img',
           start_at: deDuplicateCourseDates(futureCourseDates, upcomingCourseDates(whichDay), length, i)
         }
       }))

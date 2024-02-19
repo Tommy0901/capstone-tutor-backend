@@ -1,5 +1,5 @@
 'use strict'
-const category = ['旅行與文化', '健康生活', '文法', '發音', '商務', '會話']
+const category = ['多益', '托福', '雅思', '商用英文', '生活會話', '旅遊英文', '新聞英文']
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {

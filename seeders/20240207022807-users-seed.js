@@ -2,6 +2,13 @@
 const bcrypt = require('bcryptjs')
 const { faker } = require('@faker-js/faker')
 const { User } = require('../models')
+const availableDays = [
+  { mon: 1, tue: 1, wed: 1, thu: 0, fri: 0, sat: 0, sun: 0 },
+  { mon: 1, tue: 0, wed: 1, thu: 0, fri: 1, sat: 0, sun: 1 },
+  { mon: 0, tue: 1, wed: 0, thu: 1, fri: 0, sat: 1, sun: 0 },
+  { mon: 0, tue: 0, wed: 1, thu: 1, fri: 1, sat: 0, sun: 0 },
+  { mon: 1, tue: 0, wed: 0, thu: 0, fri: 0, sat: 1, sun: 1 }
+]
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
@@ -37,17 +44,11 @@ module.exports = {
           email: `teacher${index - 9}@example.com`,
           password: hash,
           nickname: faker.lorem.word(5),
-          avatar: 'https://loremflickr.com/320/240/people/all',
+          avatar: 'https://thispersondoesnotexist.com/',
           is_teacher: true,
           teach_style: faker.lorem.paragraph(),
           self_intro: faker.lorem.paragraph(),
-          mon: faker.datatype.boolean(),
-          tue: faker.datatype.boolean(),
-          wed: faker.datatype.boolean(),
-          thu: faker.datatype.boolean(),
-          fri: faker.datatype.boolean(),
-          sat: faker.datatype.boolean(),
-          sun: faker.datatype.boolean(),
+          ...availableDays[Math.floor(Math.random() * availableDays.length)],
           created_at: new Date(),
           updated_at: new Date()
         }
