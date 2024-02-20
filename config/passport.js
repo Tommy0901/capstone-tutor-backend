@@ -11,17 +11,17 @@ const jwtOptions = {
 }
 
 passport.use(new JwtStrategy(jwtOptions,
-  (jwtPayload, done) => {
-    const { id } = jwtPayload;
-    (async () => {
-      try {
-        const userData = await User.findByPk(id)
-        const { password, ...user } = userData.toJSON()
-        done(null, user)
-      } catch (err) {
-        done(err)
-      }
-    })()
+  async (jwtPayload, done) => {
+    try {
+      const userData = await User.findByPk(jwtPayload.id, { raw: true })
+      const { password, ...teacherUser } = userData
+
+      if (teacherUser.isTeacher) return done(null, teacherUser)
+      const { mon, tue, wed, thu, fri, sat, sun, teachStyle, ...studentUser } = teacherUser
+      done(null, studentUser)
+    } catch (err) {
+      done(err)
+    }
   }))
 
 module.exports = passport
