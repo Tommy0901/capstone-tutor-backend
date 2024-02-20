@@ -22,19 +22,19 @@ module.exports = {
   },
   signIn: async (req, res, next) => {
     try {
-      const { body: { email, password: inputPassword } } = req
-      if (!email || !inputPassword) return errorMsg(res, 401, 'Please enter email and password!')
+      const { body: { password, email } } = req
+      if (!password || !email) return errorMsg(res, 401, 'Please enter email and password!')
 
-      const userData = await User.findOne({ attributes: ['id', 'password'], where: { email }, raw: true })
-      if (!userData) return errorMsg(res, 401, 'email 或密碼錯誤')
+      const user = await User.findOne({ attributes: ['id', 'password'], where: { email }, raw: true })
+      if (!user) return errorMsg(res, 401, 'email 或密碼錯誤')
 
-      const { password, ...user } = userData
-      await bcrypt.compare(inputPassword, password)
+      await bcrypt.compare(password, user.password)
         ? res.json({
           status: 'success',
           data: {
-            token: jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '30d' }),
-            user
+            id: user.id,
+            email,
+            token: jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' })
           }
         })
         : errorMsg(res, 401, 'email 或密碼錯誤')
