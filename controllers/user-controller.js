@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 
 const { errorMsg } = require('../middlewares/message-handler')
 const { imgurUpload } = require('../helpers/image-helpers')
+const { booleanObjects } = require('../helpers/datatype-helpers')
 
 module.exports = {
   signUp: async (req, res, next) => {
@@ -62,7 +63,7 @@ module.exports = {
       if (+id !== userId) return errorMsg(res, 403, 'Permission denied!')
       res.json({
         status: 'success',
-        data: await User.findByPk(id, { attributes: ['id', 'name', 'nickname', 'avatar', 'selfIntro'] })
+        data: await User.findByPk(id, { attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro'] })
       })
     } catch (err) {
       next(err)
@@ -78,6 +79,68 @@ module.exports = {
       ])
       await user.update({ name, nickname, avatar: filePath || user.avatar, selfIntro })
       res.json({ status: 'success', data: user.toJSON() })
+    } catch (err) {
+      next(err)
+    }
+  },
+  patchTeacher: async (req, res, next) => {
+    try {
+      const { params: { id }, user: { id: userId } } = req
+      if (+id !== userId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
+      await User.update({ isTeacher: true }, { where: { id } })
+      res.json({
+        status: 'success',
+        data: await User.findByPk(id, { attributes: ['id', 'name', 'email', 'isTeacher'] })
+      })
+    } catch (err) {
+      next(err)
+    }
+  },
+  getTeacher: async (req, res, next) => {
+    try {
+      const { params: { id } } = req
+      const user = await User.findOne({
+        where: { id, isTeacher: true }
+        // include: Course
+      })
+      if (!user) return errorMsg(res, 404, "Teacher didn't exist!")
+      const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
+      res.json({ status: 'success', data })
+    } catch (err) {
+      next(err)
+    }
+  },
+  editTeacher: async (req, res, next) => {
+    try {
+      const { params: { id }, user: { id: userId } } = req
+      if (+id !== userId) return errorMsg(res, 403, 'Permission denied!')
+      const user = await User.findByPk(id)
+      const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
+      res.json({ status: 'success', data })
+    } catch (err) {
+      next(err)
+    }
+  },
+  putTeacher: async (req, res, next) => {
+    try {
+      const { body: { name, nickname, teachStyle, selfIntro } } = req
+      const { body: { mon, tue, wed, thu, fri, sat, sun } } = req
+      const whichDay = { mon, tue, wed, thu, fri, sat, sun }
+
+      const { params: { id }, user: { id: userId }, file } = req
+
+      if (+id !== userId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
+      if (!name) return errorMsg(res, 401, 'Please enter name.')
+
+      if (!booleanObjects(whichDay)) return errorMsg(res, 401, 'Which day input was invalid .')
+
+      const [filePath, user] = await Promise.all([imgurUpload(file), User.findByPk(id)])
+      const updateDate = { name, nickname, teachStyle, selfIntro, ...whichDay }
+
+      await user.update({ avatar: filePath || user.avatar, ...updateDate })
+
+      const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
+      res.json({ status: 'success', data })
     } catch (err) {
       next(err)
     }
