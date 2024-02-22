@@ -20,6 +20,7 @@ module.exports = {
         // Insert regular users
         return {
           name: `user-${index + 1}`,
+          nation: faker.location.country(),
           email: `user${index + 1}@example.com`,
           password: hash,
           nickname: faker.lorem.word(5),
@@ -41,6 +42,7 @@ module.exports = {
         // Insert teachers
         return {
           name: `teacher-${index - 9}`,
+          nation: faker.location.country(),
           email: `teacher${index - 9}@example.com`,
           password: hash,
           nickname: faker.lorem.word(5),
