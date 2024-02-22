@@ -16,6 +16,12 @@ router.get('/student/:id/edit', userController.editStudent)
 router.put('/student/:id', upload.single('avatar'), userController.putStudent)
 router.get('/student/:id', userController.getStudent)
 
+router.get('/teacher/:id/personal', userController.getTeacher)
+router.get('/teacher/:id/edit', userController.editTeacher)
+router.put('/teacher/:id', upload.single('avatar'), userController.putTeacher)
+router.patch('/teacher/:id', userController.patchTeacher)
+router.get('/teacher/:id', userController.getTeacher)
+
 router.use('/', apiErrorHandler)
 
 module.exports = router
