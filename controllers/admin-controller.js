@@ -8,8 +8,8 @@ module.exports = {
         raw: true
       })
       res.json({ status: 'success', data: users })
-    } catch (error) {
-      next(error)
+    } catch (err) {
+      next(err)
     }
   }
 }
