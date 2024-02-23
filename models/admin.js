@@ -19,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
     password: DataTypes.STRING
   }, {
     sequelize,
+    underscored: true,
     modelName: 'Admin',
     tableName: 'Admins'
   })

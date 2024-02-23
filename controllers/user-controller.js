@@ -1,5 +1,6 @@
-const { User } = require('../models')
+const { User, Course, Category, Registration, Admin } = require('../models')
 const bcrypt = require('bcryptjs')
+const dayjs = require('dayjs')
 const jwt = require('jsonwebtoken')
 
 const { errorMsg } = require('../middlewares/message-handler')
@@ -27,7 +28,8 @@ module.exports = {
       const { body: { password, email } } = req
       if (!password || !email) return errorMsg(res, 401, 'Please enter email and password!')
 
-      const user = await User.findOne({ attributes: ['id', 'password'], where: { email }, raw: true })
+      const findOptions = { attributes: ['id', 'password'], where: { email }, raw: true }
+      const user = await User.findOne(findOptions) || await Admin.findOne(findOptions)
       if (!user) return errorMsg(res, 401, 'email 或密碼錯誤')
 
       await bcrypt.compare(password, user.password)
@@ -48,10 +50,22 @@ module.exports = {
     try {
       const { params: { id } } = req
       const user = await User.findByPk(id, {
-        attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro']
-        // include: Registration
+        attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro'],
+        include: {
+          model: Registration,
+          attributes: ['id', 'studentId', 'courseId', 'rating', 'comment'],
+          include: {
+            model: Course,
+            attributes: ['id', 'teacherId', 'categoryId', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
+          }
+        }
       })
       if (!user) return errorMsg(res, 404, "Student didn't exist!")
+      user.dataValues.Registrations = user.dataValues.Registrations
+        .map(item => {
+          item.dataValues.Course.dataValues.startAt = dayjs(item.dataValues.Course.dataValues.startAt).add(8, 'hour').toDate()
+          return item
+        })
       res.json({ status: 'success', data: user })
     } catch (err) {
       next(err)
@@ -100,10 +114,22 @@ module.exports = {
     try {
       const { params: { id } } = req
       const user = await User.findOne({
-        where: { id, isTeacher: true }
-        // include: Course
+        where: { id, isTeacher: true },
+        include: {
+          model: Course,
+          attributes: ['id', 'teacherId', 'categoryId', 'name', 'intro', 'image', 'link', 'startAt', 'duration'],
+          include: {
+            model: Category,
+            attributes: ['id', 'name']
+          }
+        }
       })
       if (!user) return errorMsg(res, 404, "Teacher didn't exist!")
+      user.dataValues.Courses = user.dataValues.Courses
+        .map(item => {
+          item.dataValues.startAt = dayjs(item.dataValues.startAt).add(8, 'hour').toDate()
+          return item
+        })
       const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
       res.json({ status: 'success', data })
     } catch (err) {
