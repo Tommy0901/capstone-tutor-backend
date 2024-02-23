@@ -27,8 +27,8 @@ router.patch('/teacher/:id', userController.patchTeacher)
 router.get('/teacher/:id', userController.getTeacher)
 
 router.get('/course/:courseId', courseController.getCourse)
-router.post('/course/:teacherId', courseController.postCourse)
 router.put('/course/:courseId', courseController.putCourse)
+router.post('/course', courseController.postCourse)
 router.get('/courses', courseController.getCourses)
 
 router.use('/', apiErrorHandler)
