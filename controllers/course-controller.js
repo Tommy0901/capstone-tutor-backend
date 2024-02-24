@@ -1,9 +1,10 @@
-const { Course, User, Category } = require('../models')
+const { Course, User, Category, Registration } = require('../models')
 const { Op } = require('sequelize')
 const { errorMsg } = require('../middlewares/message-handler')
 const { imgurUpload } = require('../helpers/image-helpers')
 const { getOffset } = require('../helpers/pagination-helper')
-const placeholderImg = 'https://fakeimg.pl/300/?text=course%20img'
+const { emptyObjectValues } = require('../helpers/datatype-helpers')
+const { formatCourseDate } = require('../helpers/time-helpers')
 
 module.exports = {
   getCourses: async (req, res, next) => {
@@ -35,16 +36,17 @@ module.exports = {
   },
   postCourse: async (req, res, next) => {
     try {
-      const { params: { teacherId: id }, user: { id: teacherId } } = req
+      const { user: { id, isTeacher } } = req
       const { body: { categoryId, name, intro, link, duration, startAt }, file } = req
-      if (+id !== teacherId) return errorMsg(res, 401, "Insufficient permission. Don't create the new course!")
 
-      const filePath = await imgurUpload(file) || placeholderImg
-      const missingField = Object.values(req.body).some(item => !item) // 找出沒有填寫的欄位
-      if (missingField) return errorMsg(res, 400, 'All fields are required')
+      if (!isTeacher) return errorMsg(res, 401, 'Insufficient permission. Unable to create a new course!')
+
+      const filePath = await imgurUpload(file) || ''
+      const missingField = { categoryId, name, intro, link, duration, startAt }
+      if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required') // 找出沒有填寫的欄位
 
       const createdCourse = await Course.create({
-        teacherId,
+        teacherId: id,
         categoryId,
         name,
         intro,
@@ -53,6 +55,9 @@ module.exports = {
         image: filePath,
         startAt
       })
+
+      createdCourse.dataValues.startAt = formatCourseDate(createdCourse.dataValues.startAt)
+
       res.json({ status: 'success', data: createdCourse })
     } catch (error) {
       next(error)
@@ -63,9 +68,21 @@ module.exports = {
       const { params: { courseId: id } } = req
       const course = await Course.findByPk(id, {
         attributes: ['id', 'teacherId', 'categoryId', 'name', 'intro', 'link', 'duration', 'image', 'startAt'],
+        include: [{
+          model: Registration,
+          where: { courseId: id },
+          attributes: ['id', 'studentId', 'rating', 'comment', 'createdAt'],
+          order: [['createdAt', 'DESC']],
+          include: [{
+            model: User,
+            attributes: ['id', 'name']
+          }]
+        }],
         raw: true
       })
       if (!course) return errorMsg(res, 404, "Course didn't exist!")
+      course.startAt = formatCourseDate(course.startAt)
+
       res.json({ status: 'success', data: course })
     } catch (err) {
       next(err)
@@ -76,13 +93,14 @@ module.exports = {
       const { params: { courseId: id }, user: { id: teacherId } } = req
       const { body: { categoryId, name, intro, link, duration, startAt }, file } = req
 
-      const [filePath, user, course] = await Promise.all([
+      const [filePath, course] = await Promise.all([
         imgurUpload(file),
-        User.findByPk(teacherId, { raw: true }),
         Course.findByPk(id)
       ])
-      if (!user.isTeacher) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
-      if (!course) return errorMsg(res, 404, "Course didn't exist!")
+      if (teacherId !== course.teacherId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
+
+      const missingField = { categoryId, name, intro, link, duration, startAt }
+      if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required') // 避免使用者改成空值
 
       const updatedCourse = await course.update({
         categoryId,
@@ -93,6 +111,9 @@ module.exports = {
         image: filePath || course.image,
         startAt
       })
+
+      updatedCourse.dataValues.startAt = formatCourseDate(updatedCourse.dataValues.startAt)
+
       res.json({ status: 'success', data: updatedCourse })
     } catch (err) {
       next(err)
