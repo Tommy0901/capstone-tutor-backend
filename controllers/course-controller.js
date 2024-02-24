@@ -100,7 +100,7 @@ module.exports = {
       if (teacherId !== course.teacherId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
 
       const missingField = { categoryId, name, intro, link, duration, startAt }
-      if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required') // 避免使用者改成空值
+      if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required and cannot be empty') // 避免使用者改成空值
 
       const updatedCourse = await course.update({
         categoryId,
