@@ -1,4 +1,4 @@
-const { User } = require('../models')
+const { User, Admin } = require('../models')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
@@ -27,7 +27,9 @@ module.exports = {
       const { body: { password, email } } = req
       if (!password || !email) return errorMsg(res, 401, 'Please enter email and password!')
 
-      const user = await User.findOne({ attributes: ['id', 'password'], where: { email }, raw: true })
+      const findOptions = { attributes: ['id', 'password'], where: { email }, raw: true }
+      const user = await User.findOne(findOptions) || await Admin.findOne(findOptions)
+
       if (!user) return errorMsg(res, 401, 'email 或密碼錯誤')
 
       await bcrypt.compare(password, user.password)

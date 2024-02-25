@@ -13,14 +13,19 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
     }
   }
-  Admin.init({
-    name: DataTypes.STRING,
-    email: DataTypes.STRING,
-    password: DataTypes.STRING
-  }, {
-    sequelize,
-    modelName: 'Admin',
-    tableName: 'Admins'
-  })
+  Admin.init(
+    {
+      name: DataTypes.STRING,
+      email: DataTypes.STRING,
+      password: DataTypes.STRING,
+      is_admin: DataTypes.BOOLEAN
+    },
+    {
+      sequelize,
+      underscored: true,
+      modelName: 'Admin',
+      tableName: 'Admins'
+    }
+  )
   return Admin
 }
