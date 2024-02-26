@@ -59,7 +59,7 @@ module.exports = {
           attributes: ['id', 'studentId', 'courseId', 'rating', 'comment'],
           include: {
             model: Course,
-            attributes: ['id', 'teacherId', 'categoryId', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
+            attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
           }
         }
       })
@@ -131,11 +131,7 @@ module.exports = {
         where: { id, isTeacher: true },
         include: {
           model: Course,
-          attributes: ['id', 'teacherId', 'categoryId', 'name', 'intro', 'image', 'link', 'startAt', 'duration'],
-          include: {
-            model: Category,
-            attributes: ['id', 'name']
-          }
+          attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
         }
       })
       if (!user) return errorMsg(res, 404, "Teacher didn't exist!")
