@@ -7,7 +7,7 @@ module.exports = {
       (err, data) => {
         if (err || (!data && data !== false)) {
           return err
-            ? res.status(500).json({ status: 'error', message: err.message })
+            ? res.status(err.status || 500).json({ status: 'error', message: err.message })
             : res.status(401).json({ status: 'error', message: 'unauthorized' })
         }
         req.user = data

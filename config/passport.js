@@ -3,6 +3,8 @@ const passport = require('passport')
 
 const { User, Admin } = require('../models')
 
+const { throwError } = require('../middlewares/error-handler')
+
 const FacebookStrategy = require('passport-facebook')
 const { ExtractJwt, Strategy: JwtStrategy } = require('passport-jwt')
 
@@ -21,6 +23,7 @@ passport.use(
         const userData = await User.findByPk(jwtPayload.id, { raw: true })
         if (!userData) {
           const adminData = await Admin.findByPk(jwtPayload.id, { raw: true })
+          if (!adminData) return throwError(401, 'unauthorized')
           const { password, ...adminUser } = adminData
           adminUser.isAdmin = true
           return done(null, adminUser)

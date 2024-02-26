@@ -6,8 +6,8 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 module.exports = {
-  currentTaipeiTime: () => // 找到台北時區
-    dayjs().tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss'),
+  currentTaipeiTime: datetime => // 找到台北時區
+    dayjs(datetime).tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss'),
 
   formatCourseDate (courseDate) {
     return dayjs(courseDate).format('YYYY-MM-DD HH:mm:ss') // 將課程時間格式化
