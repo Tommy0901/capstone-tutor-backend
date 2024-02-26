@@ -14,6 +14,8 @@ router.get('/oauth/redirect/facebook', facebookOauthRedirect)
 router.post('/signup', userController.signUp)
 router.post('/signin', userController.signIn)
 
+router.get('/home', userController.homepage)
+
 router.use(authenticated)
 
 router.use('/admin', authenticatedAdmin, admin)

@@ -1,8 +1,11 @@
-const { User, Course, Category, Registration, Admin } = require('../models')
+const { User, teaching_category, Category, Course, Registration, Admin } = require('../models')
+const { Op } = require('sequelize')
+const sequelize = require('sequelize')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
 const { errorMsg } = require('../middlewares/message-handler')
+const { getOffset, getPagination } = require('../helpers/pagination-helper')
 const { imgurUpload } = require('../helpers/image-helpers')
 const { booleanObjects } = require('../helpers/datatype-helpers')
 const { currentTaipeiTime } = require('../helpers/time-helpers')
@@ -45,6 +48,59 @@ module.exports = {
           }
         })
         : errorMsg(res, 401, 'email 或密碼錯誤')
+    } catch (err) {
+      next(err)
+    }
+  },
+  homepage: async (req, res, next) => {
+    try {
+      const { query: { categoryId, keyword } } = req
+      const likeKeywordObject = { [Op.like]: `%${keyword}%` }
+      const [name, nation, nickname, teachStyle, selfIntro] = Array.from({ length: 5 }, () => likeKeywordObject)
+      const searchFields = [{ name }, { nation }, { nickname }, { teachStyle }, { selfIntro }]
+      const limit = 6
+      const page = req.query.page || 1
+      const [teachers, students] = await Promise.all([
+        User.findAndCountAll({
+          attributes: ['id', 'name', 'nation', 'nickname', 'avatar', 'teachStyle', 'selfIntro'],
+          where: {
+            isTeacher: true,
+            ...keyword ? { [Op.or]: searchFields } : {}
+          },
+          include: {
+            model: teaching_category,
+            attributes: ['categoryId'],
+            ...categoryId ? { where: { categoryId } } : {},
+            include: {
+              model: Category,
+              attributes: ['name']
+            }
+          },
+          limit,
+          offset: getOffset(limit, page)
+        }),
+        Registration.findAll({
+          attributes: [
+            'studentId',
+            [sequelize.fn('SUM', sequelize.col('Course.duration')), 'studyHours']
+          ],
+          include: [
+            { model: User, attributes: ['name', 'nickname', 'avatar'] },
+            { model: Course, attributes: [], where: { startAt: { [Op.lt]: new Date() } } }
+          ],
+          group: ['studentId'],
+          limit: 10,
+          order: [['studyHours', 'DESC']]
+        })
+      ])
+      const data = { ...getPagination(limit, page, teachers.count) }
+      data.teachers = teachers.rows
+      data.students = students
+        .map(student => {
+          student.dataValues.studyHours = +student.dataValues.studyHours / 60
+          return student
+        })
+      res.json({ status: 'success', data })
     } catch (err) {
       next(err)
     }
