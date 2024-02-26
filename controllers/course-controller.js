@@ -57,6 +57,8 @@ module.exports = {
       })
 
       createdCourse.dataValues.startAt = formatCourseDate(createdCourse.dataValues.startAt)
+      const { createdAt, updatedAt, ...rest } = createdCourse.dataValues
+      createdCourse.dataValues = rest
 
       res.json({ status: 'success', data: createdCourse })
     } catch (error) {
@@ -70,18 +72,16 @@ module.exports = {
         attributes: ['id', 'teacherId', 'categoryId', 'name', 'intro', 'link', 'duration', 'image', 'startAt'],
         include: [{
           model: Registration,
-          where: { courseId: id },
-          attributes: ['id', 'studentId', 'rating', 'comment', 'createdAt'],
+          attributes: ['id', 'studentId', 'rating', 'comment'],
           order: [['createdAt', 'DESC']],
           include: [{
             model: User,
             attributes: ['id', 'name']
           }]
-        }],
-        raw: true
+        }]
       })
       if (!course) return errorMsg(res, 404, "Course didn't exist!")
-      course.startAt = formatCourseDate(course.startAt)
+      course.dataValues.startAt = formatCourseDate(course.dataValues.startAt)
 
       res.json({ status: 'success', data: course })
     } catch (err) {
@@ -97,6 +97,7 @@ module.exports = {
         imgurUpload(file),
         Course.findByPk(id)
       ])
+      if (!course) return errorMsg(res, 404, "Course didn't exist!")
       if (teacherId !== course.teacherId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
 
       const missingField = { categoryId, name, intro, link, duration, startAt }
@@ -113,6 +114,8 @@ module.exports = {
       })
 
       updatedCourse.dataValues.startAt = formatCourseDate(updatedCourse.dataValues.startAt)
+      const { createdAt, updatedAt, price, ...rest } = updatedCourse.dataValues
+      updatedCourse.dataValues = rest
 
       res.json({ status: 'success', data: updatedCourse })
     } catch (err) {
