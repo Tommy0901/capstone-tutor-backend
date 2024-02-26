@@ -76,6 +76,7 @@ module.exports = {
               attributes: ['name']
             }
           },
+          group: ['id'],
           limit,
           offset: getOffset(limit, page)
         }),
@@ -93,7 +94,7 @@ module.exports = {
           order: [['studyHours', 'DESC']]
         })
       ])
-      const data = { ...getPagination(limit, page, teachers.count) }
+      const data = { ...getPagination(limit, page, teachers.count.length) }
       data.teachers = teachers.rows
       data.students = students
         .map(student => {
