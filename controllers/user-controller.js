@@ -1,10 +1,11 @@
-const { User, Admin } = require('../models')
+const { User, Course, Category, Registration, Admin } = require('../models')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
 const { errorMsg } = require('../middlewares/message-handler')
 const { imgurUpload } = require('../helpers/image-helpers')
 const { booleanObjects } = require('../helpers/datatype-helpers')
+const { currentTaipeiTime } = require('../helpers/time-helpers')
 
 module.exports = {
   signUp: async (req, res, next) => {
@@ -17,6 +18,8 @@ module.exports = {
 
       const createdUser = await User.create({ name, email, password: await bcrypt.hash(password, 10) })
       const { password: removePassword, ...user } = createdUser.toJSON()
+      user.updatedAt = currentTaipeiTime(user.updatedAt)
+      user.createdAt = currentTaipeiTime(user.createdAt)
       res.json({ status: 'success', data: user })
     } catch (err) {
       next(err)
@@ -27,9 +30,8 @@ module.exports = {
       const { body: { password, email } } = req
       if (!password || !email) return errorMsg(res, 401, 'Please enter email and password!')
 
-      const findOptions = { attributes: ['id', 'password'], where: { email }, raw: true }
+      const findOptions = { where: { email }, raw: true }
       const user = await User.findOne(findOptions) || await Admin.findOne(findOptions)
-
       if (!user) return errorMsg(res, 401, 'email 或密碼錯誤')
 
       await bcrypt.compare(password, user.password)
@@ -37,6 +39,7 @@ module.exports = {
           status: 'success',
           data: {
             id: user.id,
+            isTeacher: user.isTeacher,
             email,
             token: jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' })
           }
@@ -50,10 +53,22 @@ module.exports = {
     try {
       const { params: { id } } = req
       const user = await User.findByPk(id, {
-        attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro']
-        // include: Registration
+        attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro'],
+        include: {
+          model: Registration,
+          attributes: ['id', 'studentId', 'courseId', 'rating', 'comment'],
+          include: {
+            model: Course,
+            attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
+          }
+        }
       })
       if (!user) return errorMsg(res, 404, "Student didn't exist!")
+      user.dataValues.Registrations = user.dataValues.Registrations
+        .map(item => {
+          item.dataValues.Course.dataValues.startAt = currentTaipeiTime(item.dataValues.Course.dataValues.startAt)
+          return item
+        })
       res.json({ status: 'success', data: user })
     } catch (err) {
       next(err)
@@ -63,10 +78,14 @@ module.exports = {
     try {
       const { params: { id }, user: { id: userId } } = req
       if (+id !== userId) return errorMsg(res, 403, 'Permission denied!')
-      res.json({
-        status: 'success',
-        data: await User.findByPk(id, { attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro'] })
-      })
+      const user = await User
+        .findByPk(id, {
+          attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro', 'createdAt', 'updatedAt'],
+          raw: true
+        })
+      user.createdAt = currentTaipeiTime(user.createdAt)
+      user.updatedAt = currentTaipeiTime(user.updatedAt)
+      res.json({ status: 'success', data: user })
     } catch (err) {
       next(err)
     }
@@ -77,23 +96,30 @@ module.exports = {
       if (+id !== userId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
       if (!name) return errorMsg(res, 401, 'Please enter name.')
       const [filePath, user] = await Promise.all([imgurUpload(file),
-        User.findByPk(id, { attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro'] })
+        User.findByPk(id, { attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro', 'createdAt', 'updatedAt'] })
       ])
       await user.update({ name, nickname, avatar: filePath || user.avatar, selfIntro })
-      res.json({ status: 'success', data: user.toJSON() })
+      user.dataValues.createdAt = currentTaipeiTime(user.dataValues.createdAt)
+      user.dataValues.updatedAt = currentTaipeiTime(user.dataValues.updatedAt)
+      res.json({ status: 'success', data: user })
     } catch (err) {
       next(err)
     }
   },
   patchTeacher: async (req, res, next) => {
     try {
-      const { params: { id }, user: { id: userId } } = req
+      const { params: { id }, user: { id: userId, isTeacher } } = req
+      if (isTeacher) return errorMsg(res, 403, 'Duplicate application for teacher. Update failed!')
       if (+id !== userId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
       await User.update({ isTeacher: true }, { where: { id } })
-      res.json({
-        status: 'success',
-        data: await User.findByPk(id, { attributes: ['id', 'name', 'email', 'isTeacher'] })
-      })
+      const user = await User
+        .findByPk(id, {
+          attributes: ['id', 'name', 'email', 'isTeacher', 'createdAt', 'updatedAt'],
+          raw: true
+        })
+      user.createdAt = currentTaipeiTime(user.createdAt)
+      user.updatedAt = currentTaipeiTime(user.updatedAt)
+      res.json({ status: 'success', data: user })
     } catch (err) {
       next(err)
     }
@@ -102,10 +128,18 @@ module.exports = {
     try {
       const { params: { id } } = req
       const user = await User.findOne({
-        where: { id, isTeacher: true }
-        // include: Course
+        where: { id, isTeacher: true },
+        include: {
+          model: Course,
+          attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
+        }
       })
       if (!user) return errorMsg(res, 404, "Teacher didn't exist!")
+      user.dataValues.Courses = user.dataValues.Courses
+        .map(item => {
+          item.dataValues.startAt = currentTaipeiTime(item.dataValues.startAt)
+          return item
+        })
       const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
       res.json({ status: 'success', data })
     } catch (err) {
@@ -117,7 +151,9 @@ module.exports = {
       const { params: { id }, user: { id: userId } } = req
       if (+id !== userId) return errorMsg(res, 403, 'Permission denied!')
       const user = await User.findByPk(id)
-      const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
+      const { password, totalStudy, isTeacher, ...data } = user.toJSON()
+      data.createdAt = currentTaipeiTime(data.createdAt)
+      data.updatedAt = currentTaipeiTime(data.updatedAt)
       res.json({ status: 'success', data })
     } catch (err) {
       next(err)
@@ -137,11 +173,13 @@ module.exports = {
       if (!booleanObjects(whichDay)) return errorMsg(res, 401, 'Which day input was invalid .')
 
       const [filePath, user] = await Promise.all([imgurUpload(file), User.findByPk(id)])
-      const updateDate = { name, nickname, teachStyle, selfIntro, ...whichDay }
+      const updateFields = { name, nickname, teachStyle, selfIntro, ...whichDay }
 
-      await user.update({ avatar: filePath || user.avatar, ...updateDate })
+      await user.update({ avatar: filePath || user.avatar, ...updateFields })
 
-      const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
+      const { password, totalStudy, isTeacher, ...data } = user.toJSON()
+      data.createdAt = currentTaipeiTime(data.createdAt)
+      data.updatedAt = currentTaipeiTime(data.updatedAt)
       res.json({ status: 'success', data })
     } catch (err) {
       next(err)

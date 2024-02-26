@@ -1,13 +1,15 @@
 const express = require('express')
 const router = express.Router()
-
 const userController = require('../controllers/user-controller')
 const courseController = require('../controllers/course-controller')
 const admin = require('./modules/admin')
 
 const { apiErrorHandler } = require('../middlewares/error-handler')
-const { authenticated, authenticatedAdmin } = require('../middlewares/auth-handler')
+const { authenticated, authenticatedAdmin, facebookOauth, facebookOauthRedirect } = require('../middlewares/auth-handler')
 const { upload } = require('../middlewares/upload-file-handler')
+
+router.get('/login/facebook', facebookOauth)
+router.get('/oauth/redirect/facebook', facebookOauthRedirect)
 
 router.post('/signup', userController.signUp)
 router.post('/signin', userController.signIn)

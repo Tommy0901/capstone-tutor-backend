@@ -21,7 +21,7 @@ module.exports = {
         const { id: teacherId, ...whichDay } = teachers[i]
         return {
           teacher_id: teacherId,
-          category_id: categories[Math.floor(Math.random() * categories.length)].id,
+          // category_id: categories[Math.floor(Math.random() * categories.length)].id,
           name: faker.lorem.word(),
           intro: faker.lorem.paragraph(),
           link: faker.internet.url(),
@@ -37,7 +37,7 @@ module.exports = {
         const { id: teacherId, ...whichDay } = teachers[i]
         return {
           teacher_id: teacherId,
-          category_id: categories[Math.floor(Math.random() * categories.length)].id,
+          // category_id: categories[Math.floor(Math.random() * categories.length)].id,
           name: faker.lorem.word(),
           intro: faker.lorem.paragraph(),
           link: faker.internet.url(),
