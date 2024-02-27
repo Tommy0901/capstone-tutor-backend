@@ -20,14 +20,15 @@ passport.use(
     jwtOptions,
     async (jwtPayload, done) => {
       try {
-        const userData = await User.findByPk(jwtPayload.id, { raw: true })
-        if (!userData) {
+        if (!('isTeacher' in jwtPayload)) {
           const adminData = await Admin.findByPk(jwtPayload.id, { raw: true })
           if (!adminData) return throwError(401, 'unauthorized')
           const { password, ...adminUser } = adminData
           adminUser.isAdmin = true
           return done(null, adminUser)
         }
+        const userData = await User.findByPk(jwtPayload.id, { raw: true })
+        if (!userData) return throwError(401, 'unauthorized')
         const { password, ...teacherUser } = userData
 
         if (teacherUser.isTeacher) return done(null, teacherUser)

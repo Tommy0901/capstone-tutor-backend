@@ -44,7 +44,7 @@ module.exports = {
             id: user.id,
             isTeacher: user.isTeacher,
             email,
-            token: jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' })
+            token: jwt.sign({ id: user.id, isTeacher: user.isTeacher }, process.env.JWT_SECRET, { expiresIn: '30d' })
           }
         })
         : errorMsg(res, 401, 'email 或密碼錯誤')
