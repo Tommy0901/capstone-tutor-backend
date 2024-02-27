@@ -1,16 +1,29 @@
 'use strict'
 const { faker } = require('@faker-js/faker')
+const { User, teaching_category, Category } = require('../models')
 const { upcomingCourseDates, pastCourseDates, deDuplicateCourseDates } = require('../helpers/time-helpers')
+const { getRandomIndexes } = require('../helpers/random-indexes-helpers')
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    const { sequelize } = queryInterface
-    const { SELECT } = sequelize.QueryTypes
-    const [teachers, categories] = await Promise.all([
-      sequelize.query('SELECT id,mon,tue,wed,thu,fri,sat,sun FROM Users WHERE is_teacher = 1;', { type: SELECT }),
-      sequelize.query('SELECT id FROM Categories;', { type: SELECT })
-    ])
+    const userDatas = await User.findAll({
+      attributes: ['id', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+      include: {
+        model: teaching_category,
+        attributes: ['categoryId'],
+        include: {
+          model: Category,
+          attributes: ['name']
+        }
+      },
+      where: { isTeacher: true }
+    })
+    const teachers = userDatas.map(user => {
+      const teachers = user.toJSON()
+      teachers.teaching_categories = teachers.teaching_categories.map(obj => obj.Category.name)
+      return teachers
+    })
     const { length } = teachers
     const courses = []
     const historicalCourseDates = []
@@ -18,10 +31,15 @@ module.exports = {
 
     for (let i = 0; i < 2; i++) {
       courses.push(...Array.from({ length }, (_, i) => {
-        const { id: teacherId, ...whichDay } = teachers[i]
+        const { id: teacherId, teaching_categories: teachingCategories, ...whichDay } = teachers[i]
+        const randomIndexes = getRandomIndexes(
+          teachingCategories.length,
+          Math.ceil(Math.random() * teachingCategories.length)
+        )
+        const category = JSON.stringify(randomIndexes.map(index => teachingCategories[index]))
         return {
           teacher_id: teacherId,
-          // category_id: categories[Math.floor(Math.random() * categories.length)].id,
+          category,
           name: faker.lorem.word(),
           intro: faker.lorem.paragraph(),
           link: faker.internet.url(),
@@ -34,10 +52,15 @@ module.exports = {
 
     for (let i = 0; i < 2; i++) {
       courses.push(...Array.from({ length }, (_, i) => {
-        const { id: teacherId, ...whichDay } = teachers[i]
+        const { id: teacherId, teaching_categories: teachingCategories, ...whichDay } = teachers[i]
+        const randomIndexes = getRandomIndexes(
+          teachingCategories.length,
+          Math.ceil(Math.random() * teachingCategories.length)
+        )
+        const category = JSON.stringify(randomIndexes.map(index => teachingCategories[index]))
         return {
           teacher_id: teacherId,
-          // category_id: categories[Math.floor(Math.random() * categories.length)].id,
+          category,
           name: faker.lorem.word(),
           intro: faker.lorem.paragraph(),
           link: faker.internet.url(),

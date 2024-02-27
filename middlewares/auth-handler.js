@@ -5,11 +5,7 @@ module.exports = {
   authenticated (req, res, next) {
     passport.authenticate('jwt',
       (err, data) => {
-        if (err || (!data && data !== false)) {
-          return err
-            ? res.status(err.status || 500).json({ status: 'error', message: err.message })
-            : res.status(401).json({ status: 'error', message: 'unauthorized' })
-        }
+        if (err) return res.status(err.status || 500).json({ status: 'error', message: err.message })
         req.user = data
         next()
       }
