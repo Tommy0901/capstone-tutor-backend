@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const userController = require('../controllers/user-controller')
 const courseController = require('../controllers/course-controller')
+const registerController = require('../controllers/register-controller')
 const admin = require('./modules/admin')
 
 const { apiErrorHandler } = require('../middlewares/error-handler')
@@ -34,6 +35,12 @@ router.get('/course/:courseId', courseController.getCourse)
 router.put('/course/:courseId', upload.single('image'), courseController.putCourse)
 router.post('/course', upload.single('image'), courseController.postCourse)
 router.get('/courses', courseController.getCourses)
+
+router.get('/register/all', registerController.getRegistrations)
+router.get('/register/:courseId', registerController.getCourseRegisters)
+router.post('/register/:courseId', registerController.postRegistration)
+router.put('/register/:courseId', registerController.putRegistration)
+router.delete('/register/:courseId', registerController.deleteRegistration)
 
 router.use('/', apiErrorHandler)
 
