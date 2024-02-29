@@ -94,7 +94,15 @@ module.exports = {
           order: [['studyHours', 'DESC']]
         })
       ])
+      const ratingAverage = await Registration.findAll({
+        attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'ratingAverage']],
+        include: { model: Course, attributes: [], where: { teacherId: { [sequelize.Op.in]: teachers.rows.map(i => i.dataValues.id) } } },
+        where: { rating: { [Op.not]: null } },
+        group: ['Course.teacher_id']
+      })
       const data = { ...getPagination(limit, page, teachers.count.length) }
+      teachers.rows
+        .forEach((teacher, i) => { teacher.dataValues.ratingAverage = ratingAverage[i].dataValues.ratingAverage })
       data.teachers = teachers.rows
       data.students = students
         .map(student => {
@@ -184,13 +192,29 @@ module.exports = {
   getTeacher: async (req, res, next) => {
     try {
       const { params: { id } } = req
-      const user = await User.findOne({
-        where: { id, isTeacher: true },
-        include: {
-          model: Course,
-          attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
-        }
-      })
+      const [user, registrations] = await Promise.all([
+        User.findOne({
+          where: { id, isTeacher: true },
+          include: [{
+            model: teaching_category,
+            attributes: ['categoryId'],
+            include: {
+              model: Category,
+              attributes: ['name']
+            }
+          }, {
+            model: Course,
+            attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration'],
+            include: { model: Registration, attributes: ['rating', 'comment'] }
+          }]
+        }),
+        Registration.findAll({
+          attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'ratingAverage']],
+          include: { model: Course, attributes: [], where: { teacherId: id } },
+          where: { rating: { [Op.not]: null } },
+          group: ['Course.teacher_id']
+        })
+      ])
       if (!user) return errorMsg(res, 404, "Teacher didn't exist!")
       user.dataValues.Courses = user.dataValues.Courses
         .map(item => {
@@ -198,6 +222,7 @@ module.exports = {
           return item
         })
       const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
+      data.ratingAverage = registrations[0].toJSON().ratingAverage
       res.json({ status: 'success', data })
     } catch (err) {
       next(err)
@@ -207,7 +232,16 @@ module.exports = {
     try {
       const { params: { id }, user: { id: userId } } = req
       if (+id !== userId) return errorMsg(res, 403, 'Permission denied!')
-      const user = await User.findByPk(id)
+      const user = await User.findByPk(id, {
+        include: {
+          model: teaching_category,
+          attributes: ['categoryId'],
+          include: {
+            model: Category,
+            attributes: ['name']
+          }
+        }
+      })
       const { password, totalStudy, isTeacher, ...data } = user.toJSON()
       data.createdAt = currentTaipeiTime(data.createdAt)
       data.updatedAt = currentTaipeiTime(data.updatedAt)
@@ -218,7 +252,7 @@ module.exports = {
   },
   putTeacher: async (req, res, next) => {
     try {
-      const { body: { name, nickname, teachStyle, selfIntro } } = req
+      const { body: { name, nation, nickname, teachStyle, selfIntro } } = req
       const { body: { mon, tue, wed, thu, fri, sat, sun } } = req
       const whichDay = { mon, tue, wed, thu, fri, sat, sun }
 
@@ -230,7 +264,7 @@ module.exports = {
       if (!booleanObjects(whichDay)) return errorMsg(res, 401, 'Which day input was invalid .')
 
       const [filePath, user] = await Promise.all([imgurUpload(file), User.findByPk(id)])
-      const updateFields = { name, nickname, teachStyle, selfIntro, ...whichDay }
+      const updateFields = { name, nation, nickname, teachStyle, selfIntro, ...whichDay }
 
       await user.update({ avatar: filePath || user.avatar, ...updateFields })
 
