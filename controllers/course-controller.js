@@ -1,38 +1,10 @@
 const { Course, User, Registration } = require('../models')
-const { Op } = require('sequelize')
 const { errorMsg } = require('../middlewares/message-handler')
 const { imgurUpload } = require('../helpers/image-helpers')
-const { getOffset } = require('../helpers/pagination-helper')
 const { emptyObjectValues } = require('../helpers/datatype-helpers')
 const { formatCourseDate } = require('../helpers/time-helpers')
 
 module.exports = {
-  getCourses: async (req, res, next) => {
-    try {
-      const { query: { category, keyword }, user: { id } } = req
-      const limit = 6
-      const page = req.query.page || 1
-      const [courses, user] = await Promise.all([
-        Course.findAll({
-          attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'link', 'duration', 'image', 'startAt'],
-          where: {
-            ...(category ? { category } : {}),
-            ...(keyword ? { [Op.like]: `%${keyword}%` } : {})
-          },
-          order: [['createdAt', 'DESC']],
-          limit,
-          offset: getOffset(limit, page),
-          raw: true,
-          nest: true
-        }),
-        User.findByPk(id, { raw: true })
-      ])
-      if (user.isTeacher) return errorMsg(res, 403, 'Permission denied! Unable to browse courses.')
-      res.json({ status: 'success', data: courses })
-    } catch (err) {
-      next(err)
-    }
-  },
   postCourse: async (req, res, next) => {
     try {
       const { user: { id, isTeacher } } = req
