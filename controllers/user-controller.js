@@ -222,7 +222,7 @@ module.exports = {
           return item
         })
       const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
-      data.ratingAverage = registrations[0].toJSON().ratingAverage
+      data.ratingAverage = registrations[0] ? registrations[0].toJSON().ratingAverage : null
       res.json({ status: 'success', data })
     } catch (err) {
       next(err)
@@ -252,23 +252,36 @@ module.exports = {
   },
   putTeacher: async (req, res, next) => {
     try {
-      const { body: { name, nation, nickname, teachStyle, selfIntro } } = req
+      const { body: { name, nation, nickname, teachStyle, selfIntro, category } } = req
       const { body: { mon, tue, wed, thu, fri, sat, sun } } = req
       const whichDay = { mon, tue, wed, thu, fri, sat, sun }
-
+      const hasDuplicates = category.filter((value, index, self) => self.indexOf(value) !== index).length > 0
       const { params: { id }, user: { id: userId }, file } = req
 
       if (+id !== userId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
       if (!name) return errorMsg(res, 401, 'Please enter name.')
+      if (hasDuplicates) return errorMsg(res, 401, 'CategoryId has duplicates.')
+      if (!booleanObjects(whichDay)) return errorMsg(res, 401, 'Which day input was invalid.')
 
-      if (!booleanObjects(whichDay)) return errorMsg(res, 401, 'Which day input was invalid .')
+      let categoryId = await Category.findAll({ raw: true })
+      categoryId = categoryId.map(i => i.id)
+      if (!category.every(i => categoryId.includes(i))) return errorMsg(res, 401, 'Please enter correct categoryId.')
 
-      const [filePath, user] = await Promise.all([imgurUpload(file), User.findByPk(id)])
+      const [filePath, user] = await Promise.all([
+        imgurUpload(file), User.findByPk(id), teaching_category.destroy({ where: { teacher_id: id } })
+      ])
+
+      const bulkCreateData = Array.from(
+        { length: category.length },
+        (_, i) => ({ teacherId: id, categoryId: category[i] })
+      )
+      const teachingCategory = await teaching_category.bulkCreate(bulkCreateData)
       const updateFields = { name, nation, nickname, teachStyle, selfIntro, ...whichDay }
 
       await user.update({ avatar: filePath || user.avatar, ...updateFields })
 
       const { password, totalStudy, isTeacher, ...data } = user.toJSON()
+      data.category = teachingCategory.map(i => i.dataValues.categoryId)
       data.createdAt = currentTaipeiTime(data.createdAt)
       data.updatedAt = currentTaipeiTime(data.updatedAt)
       res.json({ status: 'success', data })
