@@ -98,14 +98,18 @@ passport.use(new GoogleStrategy(
         where: { email },
         raw: true
       })
-      if (user) { cb(null, user) }
-      const randomPwd = Math.random().toString(36).slice(-8)
-      const { id } = await User.create({
-        name,
-        email,
-        password: await bcrypt.hash(randomPwd, 10)
-      })
-      return cb(null, { id, name, email })
+
+      if (user) {
+        return cb(null, user)
+      } else {
+        const randomPwd = Math.random().toString(36).slice(-8)
+        const { id } = await User.create({
+          name,
+          email,
+          password: await bcrypt.hash(randomPwd, 10)
+        })
+        return cb(null, { id, name, email })
+      }
     } catch (err) {
       cb(err)
     }

@@ -8,60 +8,41 @@ module.exports = {
   getRegistrations: async (req, res, next) => {
     try {
       const { query: { keyword }, user: { id: studentId } } = req
-      const likeKeyword = { [Op.like]: `%${keyword}%` }
-      const [teacherName, courseName] = Array.from({ length: 2 }, () => likeKeyword)
-      const searchFields = { teacherName, courseName }
 
-      const [registeredCourses, user] = await Promise.all([
-        Registration.findAll({
-          attributes: ['studentId', 'courseId', 'rating', 'comment'],
-          where: { studentId },
-          include: [{
-            model: Course,
-            attributes: [
-              'name',
-              'category',
-              'link',
-              'image',
-              'duration',
-              'startAt',
-              'teacherId'
-            ],
-            where: { ...keyword ? searchFields.courseName : {} },
-            include: [{
-              model: User,
-              attributes: ['id', 'name'],
-              where: {
-                ...keyword ? searchFields.teacherName : {}
-              }
-            }]
-          }]
-        }),
-        User.findByPk(studentId, {
+      const registeredCourses = await Registration.findAll({
+        attributes: ['studentId', 'courseId', 'rating', 'comment'],
+        where: {
+          studentId
+        },
+        include: [{
+          model: Course,
           attributes: [
-            'id',
             'name',
-            'nickname',
-            'avatar',
-            'totalStudy',
-            'selfIntro',
-            'isTeacher'
+            'category',
+            'intro',
+            'link',
+            'image',
+            'duration',
+            'startAt',
+            'teacherId'
           ],
-          raw: true
-        })
-      ])
-      if (!user || user.isTeacher) return errorMsg(res, 404, 'Permission denied. Unable to browse your registered courses!')
-      if (registeredCourses.length === 0) return throwError(404, "You haven't registered for any courses yet!")
+          where: { ...keyword ? { name: { [Op.like]: `%${keyword}%` } } : {} },
+          include: [{
+            model: User,
+            attributes: ['id', 'name']
+          }]
+        }]
+      })
 
       const registeredData = registeredCourses.map(registerCourse => {
         const courseJSON = registerCourse.toJSON()
         courseJSON.Course.startAt = currentTaipeiTime(courseJSON.Course.startAt)
-        courseJSON.Course.teacher = courseJSON.Course.User
-        delete courseJSON.Course.User
+        courseJSON.Course.User.teacherName = courseJSON.Course.User.name
+        delete courseJSON.Course.User.name
         return courseJSON
       })
 
-      const data = { registeredCourses: registeredData, user }
+      const data = { registeredCourses: registeredData }
 
       res.json({ status: 'success', data })
     } catch (err) {
@@ -77,34 +58,25 @@ module.exports = {
         include: [
           {
             model: User,
-            attributes: ['id', 'name', 'email']
+            attributes: ['id', 'name', 'email', 'nickname', 'avatar']
           },
           {
             model: Course,
-            attributes: ['teacherId'],
-            include: [
-              {
-                model: User,
-                attributes: ['id', 'isTeacher']
-              }
-            ]
+            attributes: ['teacherId']
           }
         ]
       })
+      const courseTeacherId = courseRegisters[0].dataValues.Course.teacherId
+      if (courseTeacherId !== teacherId) return errorMsg(res, 403, 'Unable to browse this course booking records.')
+
       const courseRegistersArr = courseRegisters.map(register => {
         const registerJSON = register.toJSON()
 
-        registerJSON.student = registerJSON.User
-        delete registerJSON.User
-        registerJSON.Course.teacher = registerJSON.Course.User
-        delete registerJSON.Course.User
+        registerJSON.User.studentName = registerJSON.User.name
+        delete registerJSON.User.name
 
         return registerJSON
       })
-      const courseTeacherId = courseRegistersArr[0].Course.teacherId
-      const isTeacher = courseRegistersArr[0].Course.teacher.isTeacher
-
-      if (courseTeacherId !== teacherId || !teacherId || !isTeacher) return errorMsg(res, 403, 'Unable to browse this course booking records.')
       res.json({ status: 'success', data: courseRegistersArr })
     } catch (err) {
       next(err)
@@ -112,38 +84,26 @@ module.exports = {
   },
   postRegistration: async (req, res, next) => {
     try {
-      const { params: { courseId }, body: { category, startAt }, user: { id: studentId } } = req
-      const [user, register] = await Promise.all([
-        User.findByPk(studentId, { attributes: ['id', 'name', 'isTeacher'] }),
-        Registration.findOne({ where: { studentId, courseId } })
-      ])
-      if (user.dataValues.isTeacher) return throwError(403, 'Permission denied! Unable to register the course.')
+      const { params: { courseId }, user: { id: studentId } } = req
+
+      if (!courseId) return errorMsg(res, 404, "Unable to register the course. Because the course didn't exist!")
+
+      const register = await Registration.findOne({
+        where: { courseId },
+        include: [{
+          model: Course,
+          attributes: ['id', 'startAt']
+        }]
+      })
       if (register) return throwError(403, 'Course has been booked!')
 
-      const [createdRegister, course] = await Promise.all([
-        Registration.create({ studentId, courseId }),
-        Course.findByPk(courseId, {
-          attributes: ['teacherId', 'category', 'startAt', 'duration'],
-          include: [{
-            model: User,
-            attributes: ['name', 'nickname']
-          }]
-        })
-      ])
+      const createdRegister = await Registration.create({ studentId, courseId })
 
-      if (!(course.category.includes(category))) return throwError(404, "Course hasn't this category!")
-      if (startAt !== currentTaipeiTime(course.dataValues.startAt)) return throwError(404, 'This is not the course opening time!')
       createdRegister.dataValues.createdAt = currentTaipeiTime(createdRegister.dataValues.createdAt)
       createdRegister.dataValues.updatedAt = currentTaipeiTime(createdRegister.dataValues.updatedAt)
-      course.dataValues.startAt = currentTaipeiTime(course.dataValues.startAt)
-
-      const { User: teacher, ...courseData } = course.toJSON()
-      courseData.teacher = teacher
-      const data = { student: user, register: createdRegister.dataValues, courseData }
 
       if (createdRegister) {
-        await user.increment('totalStudy', { by: `${course.duration}` })
-        res.json({ status: 'success', data })
+        res.json({ status: 'success', data: createdRegister })
       } else {
         errorMsg(res, 403, 'Register failed!')
       }
@@ -154,12 +114,16 @@ module.exports = {
   putRegistration: async (req, res, next) => {
     try {
       const { params: { courseId }, body: { rating, comment }, user: { id: studentId } } = req
-      const [register, user] = await Promise.all([
-        Registration.findOne({ where: { studentId, courseId } }),
-        User.findByPk(studentId)
-      ])
-      if (!user || user.isTeacher) return throwError(403, 'Unable to rate and review this course!')
-      if (!register) return throwError(403, "You haven't registered the course!")
+
+      const register = await Registration.findOne({
+        where: { studentId, courseId },
+        include: [{
+          model: Course,
+          attributes: ['startAt']
+        }]
+      })
+
+      if (!register) return throwError(403, 'Unable to rate and review this course!')
 
       const updatedRegister = await register.update({
         studentId,
@@ -167,8 +131,17 @@ module.exports = {
         rating,
         comment
       })
+      const now = new Date()
+      const openingTime = register.dataValues.Course.dataValues.startAt
+      if (currentTaipeiTime(now) < openingTime) return errorMsg(res, 403, 'Unable to rate and review this course!')
+
+      const isRatingAnInteger = Number.isInteger(updatedRegister.dataValues.rating)
+      if (!isRatingAnInteger) return errorMsg(res, 403, 'Course rating has been integer!')
+
       updatedRegister.dataValues.createdAt = currentTaipeiTime(updatedRegister.dataValues.createdAt)
       updatedRegister.dataValues.updatedAt = currentTaipeiTime(updatedRegister.dataValues.updatedAt)
+      register.dataValues.Course.dataValues.startAt = currentTaipeiTime(register.dataValues.Course.dataValues.startAt)
+
       res.json({ status: 'success', data: updatedRegister })
     } catch (err) {
       next(err)
@@ -177,17 +150,14 @@ module.exports = {
   deleteRegistration: async (req, res, next) => {
     try {
       const { params: { courseId }, user: { id: studentId } } = req
-      const [user, register] = await Promise.all([
-        User.findByPk(studentId, { attributes: ['isTeacher'], raw: true }),
-        Registration.findOne({ where: { studentId, courseId } })
-      ])
+      const register = await Registration.findOne({ where: { studentId, courseId } })
 
-      if (user.isTeacher) return errorMsg(res, 403, 'Unable to cancel the register.')
       if (!register) return errorMsg(res, 404, "Registration didn't exist!")
 
       register.dataValues.createdAt = currentTaipeiTime(register.dataValues.createdAt)
       register.dataValues.updatedAt = currentTaipeiTime(register.dataValues.updatedAt)
       const deletedRegister = await register.destroy()
+
       res.json({ status: 'success', data: deletedRegister })
     } catch (err) {
       next(err)
