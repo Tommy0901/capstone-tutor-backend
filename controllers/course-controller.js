@@ -16,8 +16,8 @@ module.exports = {
       if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required') // 找出沒有填寫的欄位
 
       let categoryArr = await Category.findAll({ raw: true })
-      categoryArr = categoryArr.map(category => category.id)
-      if (!category.every(i => categoryArr.includes(i))) return errorMsg(res, 403, 'Please input correct category!')
+      const categoryIdArr = categoryArr.map(category => category.id)
+      if (!category.every(i => categoryIdArr.includes(i))) return errorMsg(res, 403, 'Please input correct category!')
 
       const hasDuplicate = category.filter((value, index, self) => self.indexOf(value) !== index).length > 0
       if (hasDuplicate) return errorMsg(res, 403, 'Course category is repeated. Please input correct category!')
@@ -29,9 +29,12 @@ module.exports = {
 
       const filePath = await imgurUpload(file) || ''
 
+      categoryArr = categoryArr.filter(item => category.includes(item.id))
+      const categoryName = categoryArr.map(category => category.name)
+
       const createdCourse = await Course.create({
         teacherId: id,
-        category,
+        category: categoryName,
         name,
         intro,
         link,
@@ -67,11 +70,6 @@ module.exports = {
       if (!course) return errorMsg(res, 404, "Course didn't exist!")
 
       course.dataValues.startAt = formatCourseDate(course.dataValues.startAt)
-      course.dataValues.Registrations.forEach(register => {
-        register.User.dataValues.studentName = register.User.dataValues.name
-        delete register.User.dataValues.name
-        return register
-      })
 
       res.json({ status: 'success', data: course })
     } catch (err) {

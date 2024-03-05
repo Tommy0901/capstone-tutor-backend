@@ -37,8 +37,6 @@ module.exports = {
       const registeredData = registeredCourses.map(registerCourse => {
         const courseJSON = registerCourse.toJSON()
         courseJSON.Course.startAt = currentTaipeiTime(courseJSON.Course.startAt)
-        courseJSON.Course.User.teacherName = courseJSON.Course.User.name
-        delete courseJSON.Course.User.name
         return courseJSON
       })
 
@@ -71,10 +69,6 @@ module.exports = {
 
       const courseRegistersArr = courseRegisters.map(register => {
         const registerJSON = register.toJSON()
-
-        registerJSON.User.studentName = registerJSON.User.name
-        delete registerJSON.User.name
-
         return registerJSON
       })
       res.json({ status: 'success', data: courseRegistersArr })
@@ -86,16 +80,21 @@ module.exports = {
     try {
       const { params: { courseId }, user: { id: studentId } } = req
 
-      if (!courseId) return errorMsg(res, 404, "Unable to register the course. Because the course didn't exist!")
+      const course = await Course.findByPk(courseId)
+      if (!course) return errorMsg(res, 404, "Unable to register the course. Because the course didn't exist!")
+
+      const now = new Date()
+      const openingTime = currentTaipeiTime(course.dataValues.startAt)
+      if (currentTaipeiTime(now) > openingTime) return errorMsg(res, 403, 'The course opening time has ended!')
 
       const register = await Registration.findOne({
-        where: { courseId },
+        where: { studentId, courseId },
         include: [{
           model: Course,
           attributes: ['id', 'startAt']
         }]
       })
-      if (register) return throwError(403, 'Course has been booked!')
+      if (register) return throwError(403, 'Duplicate registration for this course')
 
       const createdRegister = await Registration.create({ studentId, courseId })
 
@@ -115,6 +114,9 @@ module.exports = {
     try {
       const { params: { courseId }, body: { rating, comment }, user: { id: studentId } } = req
 
+      const isRatingAnInteger = Number.isInteger(rating)
+      if (!isRatingAnInteger) return errorMsg(res, 403, 'Course rating has been integer!')
+
       const register = await Registration.findOne({
         where: { studentId, courseId },
         include: [{
@@ -123,7 +125,11 @@ module.exports = {
         }]
       })
 
-      if (!register) return throwError(403, 'Unable to rate and review this course!')
+      if (!register) return throwError(403, 'You have not registered for the course!')
+
+      const now = new Date()
+      const openingTime = register.dataValues.Course.dataValues.startAt
+      if (currentTaipeiTime(now) < openingTime) return errorMsg(res, 403, 'The course has not started yet!')
 
       const updatedRegister = await register.update({
         studentId,
@@ -131,18 +137,25 @@ module.exports = {
         rating,
         comment
       })
-      const now = new Date()
-      const openingTime = register.dataValues.Course.dataValues.startAt
-      if (currentTaipeiTime(now) < openingTime) return errorMsg(res, 403, 'Unable to rate and review this course!')
 
-      const isRatingAnInteger = Number.isInteger(updatedRegister.dataValues.rating)
-      if (!isRatingAnInteger) return errorMsg(res, 403, 'Course rating has been integer!')
+      const modifiedRegister = {
+        id: updatedRegister.dataValues.id,
+        courseId,
+        studentId,
+        rating: updatedRegister.dataValues.rating,
+        comment: updatedRegister.dataValues.comment,
+        createdAt: currentTaipeiTime(updatedRegister.dataValues.createdAt),
+        updatedAt: currentTaipeiTime(updatedRegister.dataValues.updatedAt),
+        Course: {
+          startAt: updatedRegister.dataValues.Course.dataValues.startAt
+        }
+      }
 
       updatedRegister.dataValues.createdAt = currentTaipeiTime(updatedRegister.dataValues.createdAt)
       updatedRegister.dataValues.updatedAt = currentTaipeiTime(updatedRegister.dataValues.updatedAt)
-      register.dataValues.Course.dataValues.startAt = currentTaipeiTime(register.dataValues.Course.dataValues.startAt)
+      modifiedRegister.Course.startAt = currentTaipeiTime(modifiedRegister.Course.startAt)
 
-      res.json({ status: 'success', data: updatedRegister })
+      res.json({ status: 'success', data: modifiedRegister })
     } catch (err) {
       next(err)
     }
@@ -154,11 +167,20 @@ module.exports = {
 
       if (!register) return errorMsg(res, 404, "Registration didn't exist!")
 
-      register.dataValues.createdAt = currentTaipeiTime(register.dataValues.createdAt)
-      register.dataValues.updatedAt = currentTaipeiTime(register.dataValues.updatedAt)
       const deletedRegister = await register.destroy()
+      const deletedRegisterJSON = deletedRegister.toJSON()
 
-      res.json({ status: 'success', data: deletedRegister })
+      const modifiedRegister = {
+        id: deletedRegisterJSON.id,
+        courseId,
+        studentId,
+        rating: deletedRegisterJSON.rating,
+        comment: deletedRegisterJSON.comment,
+        createdAt: currentTaipeiTime(deletedRegisterJSON.createdAt),
+        updatedAt: currentTaipeiTime(deletedRegisterJSON.updatedAt)
+      }
+
+      res.json({ status: 'success', data: modifiedRegister })
     } catch (err) {
       next(err)
     }
