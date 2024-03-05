@@ -1,53 +1,40 @@
-const { Course, User, Category, Registration } = require('../models')
-const { Op } = require('sequelize')
+const { Course, User, Registration, Category } = require('../models')
 const { errorMsg } = require('../middlewares/message-handler')
 const { imgurUpload } = require('../helpers/image-helpers')
-const { getOffset } = require('../helpers/pagination-helper')
 const { emptyObjectValues } = require('../helpers/datatype-helpers')
-const { formatCourseDate } = require('../helpers/time-helpers')
+const { formatCourseDate, currentTaipeiTime } = require('../helpers/time-helpers')
 
 module.exports = {
-  getCourses: async (req, res, next) => {
-    try {
-      const { query: { categoryId, keyword }, user: { id } } = req
-      const limit = 6
-      const page = req.query.page || 1
-      const [courses, user] = await Promise.all([
-        Course.findAll({
-          attributes: ['id', 'teacherId', 'categoryId', 'name', 'intro', 'link', 'duration', 'image', 'startAt'],
-          where: {
-            ...(categoryId ? { categoryId } : {}),
-            ...(keyword ? { [Op.like]: `%${keyword}%` } : {})
-          },
-          include: [Category],
-          order: [['createdAt', 'DESC']],
-          limit,
-          offset: getOffset(limit, page),
-          raw: true,
-          nest: true
-        }),
-        User.findByPk(id, { raw: true })
-      ])
-      if (user.isTeacher) return errorMsg(res, 403, 'Permission denied! Because you are teacher.')
-      res.json({ status: 'success', data: courses })
-    } catch (err) {
-      next(err)
-    }
-  },
   postCourse: async (req, res, next) => {
     try {
       const { user: { id, isTeacher } } = req
-      const { body: { categoryId, name, intro, link, duration, startAt }, file } = req
+      const { body: { category, name, intro, link, duration, startAt }, file } = req
 
-      if (!isTeacher) return errorMsg(res, 401, 'Insufficient permission. Unable to create a new course!')
+      if (!isTeacher) return errorMsg(res, 403, 'Insufficient permission. Unable to create a new course!')
+
+      const missingField = { category, name, intro, link, duration, startAt }
+      if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required') // 找出沒有填寫的欄位
+
+      let categoryArr = await Category.findAll({ raw: true })
+      const categoryIdArr = categoryArr.map(category => category.id)
+      if (!category.every(i => categoryIdArr.includes(i))) return errorMsg(res, 403, 'Please input correct category!')
+
+      const hasDuplicate = category.filter((value, index, self) => self.indexOf(value) !== index).length > 0
+      if (hasDuplicate) return errorMsg(res, 403, 'Course category is repeated. Please input correct category!')
+
+      if (duration !== 30 && duration !== 60) return errorMsg(res, 403, 'Course duration time has been 30 min or 60 min!')
+
+      const now = new Date()
+      if (startAt <= currentTaipeiTime(now)) return errorMsg(res, 403, 'Course opening time should not be before today!')
 
       const filePath = await imgurUpload(file) || ''
-      const missingField = { categoryId, name, intro, link, duration, startAt }
-      if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required') // 找出沒有填寫的欄位
+
+      categoryArr = categoryArr.filter(item => category.includes(item.id))
+      const categoryName = categoryArr.map(category => category.name)
 
       const createdCourse = await Course.create({
         teacherId: id,
-        categoryId,
+        category: categoryName,
         name,
         intro,
         link,
@@ -69,10 +56,10 @@ module.exports = {
     try {
       const { params: { courseId: id } } = req
       const course = await Course.findByPk(id, {
-        attributes: ['id', 'teacherId', 'categoryId', 'name', 'intro', 'link', 'duration', 'image', 'startAt'],
+        attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'link', 'duration', 'image', 'startAt'],
         include: [{
           model: Registration,
-          attributes: ['id', 'studentId', 'rating', 'comment'],
+          attributes: ['id', 'studentId', 'courseId', 'rating', 'comment'],
           order: [['createdAt', 'DESC']],
           include: [{
             model: User,
@@ -81,6 +68,7 @@ module.exports = {
         }]
       })
       if (!course) return errorMsg(res, 404, "Course didn't exist!")
+
       course.dataValues.startAt = formatCourseDate(course.dataValues.startAt)
 
       res.json({ status: 'success', data: course })
@@ -91,7 +79,19 @@ module.exports = {
   putCourse: async (req, res, next) => {
     try {
       const { params: { courseId: id }, user: { id: teacherId } } = req
-      const { body: { categoryId, name, intro, link, duration, startAt }, file } = req
+      const { body: { category, name, intro, link, duration, startAt }, file } = req
+
+      let categoryArr = await Category.findAll({ raw: true })
+      categoryArr = categoryArr.map(category => category.id)
+      if (!category.every(i => categoryArr.includes(i))) return errorMsg(res, 403, 'Please input correct category!')
+
+      const hasDuplicate = category.filter((value, index, self) => self.indexOf(value) !== index).length > 0
+      if (hasDuplicate) return errorMsg(res, 403, 'Course category is repeated. Please input correct category!')
+
+      if (duration !== 30 && duration !== 60) return errorMsg(res, 403, 'Course duration time has been 30 min or 60 min!')
+
+      const now = new Date()
+      if (startAt <= currentTaipeiTime(now)) return errorMsg(res, 403, 'Course opening time should not be before today!')
 
       const [filePath, course] = await Promise.all([
         imgurUpload(file),
@@ -100,11 +100,11 @@ module.exports = {
       if (!course) return errorMsg(res, 404, "Course didn't exist!")
       if (teacherId !== course.teacherId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
 
-      const missingField = { categoryId, name, intro, link, duration, startAt }
+      const missingField = { category, name, intro, link, duration, startAt }
       if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required and cannot be empty') // 避免使用者改成空值
 
       const updatedCourse = await course.update({
-        categoryId,
+        category,
         name,
         intro,
         link,

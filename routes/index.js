@@ -2,14 +2,18 @@ const express = require('express')
 const router = express.Router()
 const userController = require('../controllers/user-controller')
 const courseController = require('../controllers/course-controller')
+const registerController = require('../controllers/register-controller')
 const admin = require('./modules/admin')
 
 const { apiErrorHandler } = require('../middlewares/error-handler')
 const { authenticated, authenticatedAdmin, facebookOauth, facebookOauthRedirect } = require('../middlewares/auth-handler')
+const { googleOauth, googleOauthRedirect } = require('../middlewares/auth-handler')
 const { upload } = require('../middlewares/upload-file-handler')
 
 router.get('/login/facebook', facebookOauth)
 router.get('/oauth/redirect/facebook', facebookOauthRedirect)
+router.get('/login/google', googleOauth)
+router.get('/oauth/redirect/google', googleOauthRedirect)
 
 router.post('/signup', userController.signUp)
 router.post('/signin', userController.signIn)
@@ -33,7 +37,12 @@ router.get('/teacher/:id', userController.getTeacher)
 router.get('/course/:courseId', courseController.getCourse)
 router.put('/course/:courseId', upload.single('image'), courseController.putCourse)
 router.post('/course', upload.single('image'), courseController.postCourse)
-router.get('/courses', courseController.getCourses)
+
+router.get('/register/all', registerController.getRegistrations)
+router.get('/register/:courseId', registerController.getCourseRegisters)
+router.post('/register/:courseId', registerController.postRegistration)
+router.put('/register/:courseId', registerController.putRegistration)
+router.delete('/register/:courseId', registerController.deleteRegistration)
 
 router.use('/', apiErrorHandler)
 
