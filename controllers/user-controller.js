@@ -60,7 +60,7 @@ module.exports = {
       const searchFields = [{ name }, { nation }, { nickname }, { teachStyle }, { selfIntro }]
       const limit = 6
       const page = req.query.page || 1
-      const [teachers, students] = await Promise.all([
+      const [teachers, students, categories] = await Promise.all([
         User.findAndCountAll({
           attributes: ['id', 'name', 'nation', 'nickname', 'avatar', 'teachStyle', 'selfIntro'],
           where: {
@@ -92,9 +92,21 @@ module.exports = {
           group: ['studentId'],
           limit: 10,
           order: [['studyHours', 'DESC']]
+        }),
+        Category.findAll({
+          attributes: ['id', 'name']
         })
       ])
+      const ratingAverage = await Registration.findAll({
+        attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'ratingAverage']],
+        include: { model: Course, attributes: [], where: { teacherId: { [Op.in]: teachers.rows.map(i => i.dataValues.id) } } },
+        where: { rating: { [Op.not]: null } },
+        group: ['Course.teacher_id']
+      })
       const data = { ...getPagination(limit, page, teachers.count.length) }
+      data.categories = categories
+      teachers.rows
+        .forEach((teacher, i) => { teacher.dataValues.ratingAverage = ratingAverage[i]?.dataValues.ratingAverage })
       data.teachers = teachers.rows
       data.students = students
         .map(student => {
@@ -109,23 +121,36 @@ module.exports = {
   getStudent: async (req, res, next) => {
     try {
       const { params: { id } } = req
-      const user = await User.findByPk(id, {
-        attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro'],
-        include: {
-          model: Registration,
-          attributes: ['id', 'studentId', 'courseId', 'rating', 'comment'],
+      const [user, rank] = await Promise.all([
+        User.findByPk(id, {
+          attributes: ['id', 'name', 'email', 'nickname', 'avatar', 'selfIntro'],
           include: {
-            model: Course,
-            attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
+            model: Registration,
+            attributes: ['id', 'studentId', 'courseId', 'rating', 'comment'],
+            include: {
+              model: Course,
+              attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
+            }
           }
-        }
-      })
+        }),
+        Registration.findAll({
+          attributes: [
+            'studentId',
+            [sequelize.fn('SUM', sequelize.col('Course.duration')), 'studyHours']
+          ],
+          include:
+            { model: Course, attributes: [], where: { startAt: { [Op.lt]: new Date() } } },
+          group: ['studentId'],
+          order: [['studyHours', 'DESC']]
+        })])
       if (!user) return errorMsg(res, 404, "Student didn't exist!")
       user.dataValues.Registrations = user.dataValues.Registrations
         .map(item => {
           item.dataValues.Course.dataValues.startAt = currentTaipeiTime(item.dataValues.Course.dataValues.startAt)
           return item
         })
+      user.dataValues.studyRank = rank.findIndex(i => i.dataValues.studentId === +id) + 1
+      user.dataValues.studyHours = rank[user.dataValues.studyRank - 1].dataValues.studyHours
       res.json({ status: 'success', data: user })
     } catch (err) {
       next(err)
@@ -184,13 +209,29 @@ module.exports = {
   getTeacher: async (req, res, next) => {
     try {
       const { params: { id } } = req
-      const user = await User.findOne({
-        where: { id, isTeacher: true },
-        include: {
-          model: Course,
-          attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration']
-        }
-      })
+      const [user, registrations] = await Promise.all([
+        User.findOne({
+          where: { id, isTeacher: true },
+          include: [{
+            model: teaching_category,
+            attributes: ['categoryId'],
+            include: {
+              model: Category,
+              attributes: ['name']
+            }
+          }, {
+            model: Course,
+            attributes: ['id', 'teacherId', 'category', 'name', 'intro', 'image', 'link', 'startAt', 'duration'],
+            include: { model: Registration, attributes: ['rating', 'comment'] }
+          }]
+        }),
+        Registration.findAll({
+          attributes: [[sequelize.fn('AVG', sequelize.col('rating')), 'ratingAverage']],
+          include: { model: Course, attributes: [], where: { teacherId: id } },
+          where: { rating: { [Op.not]: null } },
+          group: ['Course.teacher_id']
+        })
+      ])
       if (!user) return errorMsg(res, 404, "Teacher didn't exist!")
       user.dataValues.Courses = user.dataValues.Courses
         .map(item => {
@@ -198,6 +239,7 @@ module.exports = {
           return item
         })
       const { password, totalStudy, isTeacher, createdAt, updatedAt, ...data } = user.toJSON()
+      data.ratingAverage = registrations[0] ? registrations[0].toJSON().ratingAverage : null
       res.json({ status: 'success', data })
     } catch (err) {
       next(err)
@@ -207,7 +249,16 @@ module.exports = {
     try {
       const { params: { id }, user: { id: userId } } = req
       if (+id !== userId) return errorMsg(res, 403, 'Permission denied!')
-      const user = await User.findByPk(id)
+      const user = await User.findByPk(id, {
+        include: {
+          model: teaching_category,
+          attributes: ['categoryId'],
+          include: {
+            model: Category,
+            attributes: ['name']
+          }
+        }
+      })
       const { password, totalStudy, isTeacher, ...data } = user.toJSON()
       data.createdAt = currentTaipeiTime(data.createdAt)
       data.updatedAt = currentTaipeiTime(data.updatedAt)
@@ -218,23 +269,37 @@ module.exports = {
   },
   putTeacher: async (req, res, next) => {
     try {
-      const { body: { name, nickname, teachStyle, selfIntro } } = req
+      const { body: { name, nation, nickname, teachStyle, selfIntro, category } } = req
       const { body: { mon, tue, wed, thu, fri, sat, sun } } = req
       const whichDay = { mon, tue, wed, thu, fri, sat, sun }
-
       const { params: { id }, user: { id: userId }, file } = req
 
       if (+id !== userId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
       if (!name) return errorMsg(res, 401, 'Please enter name.')
+      if (!Array.isArray(category) || category?.length < 1) return errorMsg(res, 401, 'Please enter categoryId array.')
+      const hasDuplicates = category.filter((value, index, self) => self.indexOf(value) !== index).length > 0
+      if (hasDuplicates) return errorMsg(res, 401, 'CategoryId has duplicates.')
+      if (!booleanObjects(whichDay)) return errorMsg(res, 401, 'Which day input was invalid.')
 
-      if (!booleanObjects(whichDay)) return errorMsg(res, 401, 'Which day input was invalid .')
+      let categoryId = await Category.findAll({ raw: true })
+      categoryId = categoryId.map(i => i.id)
+      if (!category.every(i => categoryId.includes(i))) return errorMsg(res, 401, 'Please enter correct categoryId.')
 
-      const [filePath, user] = await Promise.all([imgurUpload(file), User.findByPk(id)])
-      const updateFields = { name, nickname, teachStyle, selfIntro, ...whichDay }
+      const [filePath, user] = await Promise.all([
+        imgurUpload(file), User.findByPk(id), teaching_category.destroy({ where: { teacher_id: id } })
+      ])
+
+      const bulkCreateData = Array.from(
+        { length: category.length },
+        (_, i) => ({ teacherId: id, categoryId: category[i] })
+      )
+      const teachingCategory = await teaching_category.bulkCreate(bulkCreateData)
+      const updateFields = { name, nation, nickname, teachStyle, selfIntro, ...whichDay }
 
       await user.update({ avatar: filePath || user.avatar, ...updateFields })
 
       const { password, totalStudy, isTeacher, ...data } = user.toJSON()
+      data.category = teachingCategory.map(i => i.dataValues.categoryId)
       data.createdAt = currentTaipeiTime(data.createdAt)
       data.updatedAt = currentTaipeiTime(data.updatedAt)
       res.json({ status: 'success', data })
