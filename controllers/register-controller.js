@@ -1,4 +1,3 @@
-const { throwError } = require('../middlewares/error-handler')
 const { errorMsg } = require('../middlewares/message-handler')
 const { Registration, Course, User } = require('../models')
 const { Op } = require('sequelize')
@@ -60,7 +59,7 @@ module.exports = {
           },
           {
             model: Course,
-            attributes: ['teacherId']
+            attributes: ['name', 'category', 'link', 'teacherId', 'startAt', 'duration']
           }
         ]
       })
@@ -69,6 +68,7 @@ module.exports = {
 
       const courseRegistersArr = courseRegisters.map(register => {
         const registerJSON = register.toJSON()
+        registerJSON.Course.startAt = currentTaipeiTime(registerJSON.Course.startAt)
         return registerJSON
       })
       res.json({ status: 'success', data: courseRegistersArr })
@@ -85,7 +85,7 @@ module.exports = {
 
       const now = new Date()
       const openingTime = currentTaipeiTime(course.dataValues.startAt)
-      if (currentTaipeiTime(now) > openingTime) return errorMsg(res, 403, 'The course opening time has ended!')
+      if (currentTaipeiTime(now) > openingTime) return errorMsg(res, 400, 'The course opening time has ended!')
 
       const register = await Registration.findOne({
         where: { studentId, courseId },
@@ -94,9 +94,9 @@ module.exports = {
           attributes: ['id', 'startAt']
         }]
       })
-      if (register) return throwError(403, 'Duplicate registration for this course')
+      if (register) return errorMsg(res, 400, 'Duplicate registration for this course')
 
-      const createdRegister = await Registration.create({ studentId, courseId })
+      const createdRegister = await Registration.create({ studentId, courseId: +courseId })
 
       createdRegister.dataValues.createdAt = currentTaipeiTime(createdRegister.dataValues.createdAt)
       createdRegister.dataValues.updatedAt = currentTaipeiTime(createdRegister.dataValues.updatedAt)
@@ -115,7 +115,7 @@ module.exports = {
       const { params: { courseId }, body: { rating, comment }, user: { id: studentId } } = req
 
       const isRatingAnInteger = Number.isInteger(rating)
-      if (!isRatingAnInteger) return errorMsg(res, 403, 'Course rating has been integer!')
+      if (!isRatingAnInteger) return errorMsg(res, 400, 'Course rating has been integer!')
 
       const register = await Registration.findOne({
         where: { studentId, courseId },
@@ -125,11 +125,11 @@ module.exports = {
         }]
       })
 
-      if (!register) return throwError(403, 'You have not registered for the course!')
+      if (!register) return errorMsg(res, 400, 'You have not registered for the course!')
 
       const now = new Date()
       const openingTime = register.dataValues.Course.dataValues.startAt
-      if (currentTaipeiTime(now) < openingTime) return errorMsg(res, 403, 'The course has not started yet!')
+      if (currentTaipeiTime(now) <= currentTaipeiTime(openingTime)) return errorMsg(res, 400, 'The course has not started yet!')
 
       const updatedRegister = await register.update({
         studentId,
@@ -140,7 +140,7 @@ module.exports = {
 
       const modifiedRegister = {
         id: updatedRegister.dataValues.id,
-        courseId,
+        courseId: +courseId,
         studentId,
         rating: updatedRegister.dataValues.rating,
         comment: updatedRegister.dataValues.comment,
@@ -172,7 +172,7 @@ module.exports = {
 
       const modifiedRegister = {
         id: deletedRegisterJSON.id,
-        courseId,
+        courseId: +courseId,
         studentId,
         rating: deletedRegisterJSON.rating,
         comment: deletedRegisterJSON.comment,
