@@ -1,0 +1,2321 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "tutor-API-docs",
+    "version": "1.0.0"
+  },
+  "externalDocs": {
+    "description": "Find out more about Swagger",
+    "url": "http://swagger.io"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    },
+    {
+      "url": "http://34.125.232.84:3000"
+    }
+  ],
+  "tags": [
+    {
+      "name": "user",
+      "description": "Operations about user"
+    },
+    {
+      "name": "course",
+      "description": "Operations about course"
+    },
+    {
+      "name": "registration",
+      "description": "Operations about registration"
+    },
+    {
+      "name": "admin",
+      "description": "Operations about admin"
+    },
+    {
+      "name": "OAuth",
+      "description": "3rd authentication"
+    }
+  ],
+  "paths": {
+    "/signup": {
+      "post": {
+        "tags": ["user"],
+        "summary": "sign up the user",
+        "description": "新增使用者註冊資料",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "name": "test",
+                  "email": "test@567",
+                  "password": "123",
+                  "passwordCheck": "123"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/signup"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/signin": {
+      "post": {
+        "tags": ["user"],
+        "summary": "user sign in",
+        "description": "送出使用者登入資料",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "email": "user1@example.com",
+                  "password": "12345678"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/signin"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/home": {
+      "get": {
+        "tags": ["user"],
+        "summary": "browse the home page",
+        "description": "顯示所有老師資料與學生的學習時數排名",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/home"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/student/{id}/edit": {
+      "get": {
+        "tags": ["user"],
+        "summary": "browse student edit page",
+        "description": "學生進入個人編輯頁",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "student id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Student"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "createdAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/student/{id}": {
+      "put": {
+        "tags": ["user"],
+        "summary": "update student data",
+        "description": "學生修改個人頁面",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "name": "test",
+                  "nickname": "testing",
+                  "avatar": "https://loremflickr.com/320/240/people/all",
+                  "selfIntro": "test tset"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "student id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Student"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "createdAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["user"],
+        "summary": "browse student psersonal page",
+        "description": "學生瀏覽自己的個人頁面",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "student id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "2"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Student"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "Registrations": {
+                              "type": "array",
+                              "items": {
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/Registration"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "Course": {
+                                        "$ref": "#/components/schemas/Course"
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "studyRank": {
+                              "type": "integer",
+                              "example": 9
+                            },
+                            "studyHours": {
+                              "type": "string",
+                              "example": "330"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/teacher/{id}/personal": {
+      "get": {
+        "tags": ["user"],
+        "summary": "teacher browse self page",
+        "description": "老師瀏覽自己的個人頁面",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "teacher id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "11"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Teacher"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "email": {
+                              "type": "string",
+                              "example": "user1@example.com"
+                            },
+                            "mon": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "tue": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "wed": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "thu": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "fri": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "sat": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "sun": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "teaching_categories": {
+                              "type": "array",
+                              "items": {
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/Teaching_category"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "Category": {
+                                        "type": "object",
+                                        "properties": {
+                                          "name": {
+                                            "type": "string",
+                                            "example": "多益"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "Courses": {
+                              "type": "array",
+                              "items": {
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/Course"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "Registrations": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "rating": {
+                                              "type": "integer",
+                                              "example": 5
+                                            },
+                                            "comment": {
+                                              "type": "string",
+                                              "example": "test"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "ratingAverage": {
+                              "type": "number",
+                              "example": 2.6
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/teacher/{id}/edit": {
+      "get": {
+        "tags": ["user"],
+        "summary": "browse teacher personal edit page",
+        "description": "老師進入個人編輯頁",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "teacher id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "11"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Teacher"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "email": {
+                              "type": "string",
+                              "example": "user1@example.com"
+                            },
+                            "mon": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "tue": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "wed": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "thu": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "fri": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "sat": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "sun": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            },
+                            "teaching_categories": {
+                              "type": "array",
+                              "items": {
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/Teaching_category"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "Category": {
+                                        "type": "object",
+                                        "properties": {
+                                          "name": {
+                                            "type": "string",
+                                            "example": "多益"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/teacher/{id}": {
+      "put": {
+        "tags": ["user"],
+        "summary": "update teacher personal page",
+        "description": "老師修改個人頁面",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "name": "teacher-1",
+                  "nation": "Bulgaria",
+                  "nickname": "calco",
+                  "teachStyle": "Veritatis thermae corrupti amissio arcus desparatus ulterius audeo harum. Rem versus cruentus tricesimus adinventitias delinquo tenuis mollitia perferendis. Quisquam decretum traho.",
+                  "category": [1],
+                  "email": "teacher1@example.com",
+                  "password": "12345678",
+                  "mon": "true",
+                  "tue": "false",
+                  "wed": "true",
+                  "thu": "false",
+                  "fri": "true",
+                  "sat": "false",
+                  "sun": "true"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "teacher id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "11"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Teacher"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "mon": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "tue": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "wed": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "thu": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "fri": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "sat": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "sun": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            },
+                            "category": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "example": "多益"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["user"],
+        "summary": "become a teacher",
+        "description": "申請成為老師",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "isTeacher": "True"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "teacher id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 46
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "test"
+                        },
+                        "email": {
+                          "type": "string",
+                          "example": "test@569"
+                        },
+                        "isTeacher": {
+                          "type": "boolean",
+                          "example": 1
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "example": "2024-03-09 10:02:41"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "example": "2024-03-09 10:02:41"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["user"],
+        "summary": "student browse teacher personal page",
+        "description": "學生瀏覽老師的個人頁面",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "teacher id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Teacher"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "email": {
+                              "type": "string",
+                              "example": "user1@example.com"
+                            },
+                            "mon": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "tue": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "wed": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "thu": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "fri": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "sat": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "sun": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            },
+                            "teaching_categories": {
+                              "type": "array",
+                              "items": {
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/Teaching_category"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "Category": {
+                                        "type": "object",
+                                        "properties": {
+                                          "name": {
+                                            "type": "string",
+                                            "example": "多益"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "Courses": {
+                              "type": "array",
+                              "items": {
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/Course"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "Registrations": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "rating": {
+                                              "type": "integer",
+                                              "example": 4
+                                            },
+                                            "comment": {
+                                              "type": "string",
+                                              "example": "example"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            "ratingAverage": {
+                              "type": "string",
+                              "example": 2.6
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "admin browse user list",
+        "description": "進入後台查看使用者清單",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "status": "success",
+                  "data": [
+                    {
+                      "id": 1,
+                      "name": "user-1",
+                      "isTeacher": 0
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/course/{courseId}": {
+      "get": {
+        "tags": ["course"],
+        "summary": "browse course page",
+        "description": "檢視課程頁面",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "description": "course id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Course"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "Registrations": {
+                              "type": "array",
+                              "items": {
+                                "allOf": [
+                                  {
+                                    "$ref": "#/components/schemas/Registration"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "User": {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                          },
+                                          "name": {
+                                            "type": "string",
+                                            "example": "jfs"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["course"],
+        "summary": "teacher update course data",
+        "description": "老師修改課程資料",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "teacherId": 11,
+                  "category": [3],
+                  "name": "test2",
+                  "intro": "123",
+                  "link": "https://naughty-laborer.info/",
+                  "duration": 30,
+                  "startAt": "2024-03-08 19:30:00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "description": "course id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "114"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Course"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/course": {
+      "post": {
+        "tags": ["course"],
+        "summary": "teacher create the course",
+        "description": "老師建立課程",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "teacherId": 11,
+                  "category": [3],
+                  "name": "test2",
+                  "intro": "123",
+                  "link": "https://naughty-laborer.info/",
+                  "duration": 30,
+                  "startAt": "2024-03-08 19:30:00"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Course"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/register/all": {
+      "get": {
+        "tags": ["registration"],
+        "summary": "student view all course reservations",
+        "description": "學生檢視所有課程預約",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "registeredCourses": {
+                          "type": "array",
+                          "items": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/Registration"
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "Course": {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string",
+                                        "example": "testing"
+                                      },
+                                      "category": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "example": "多益"
+                                        }
+                                      },
+                                      "intro": {
+                                        "type": "string",
+                                        "example": "testing"
+                                      },
+                                      "link": {
+                                        "type": "string",
+                                        "example": "https://example.com"
+                                      },
+                                      "image": {
+                                        "type": "string",
+                                        "example": "https://example.com"
+                                      },
+                                      "duration": {
+                                        "type": "integer",
+                                        "example": 30
+                                      },
+                                      "startAt": {
+                                        "type": "string",
+                                        "example": "2024-03-09 10:02:41"
+                                      },
+                                      "teacherId": {
+                                        "type": "integer",
+                                        "example": 1
+                                      },
+                                      "User": {
+                                        "type": "object",
+                                        "properties": {
+                                          "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                          },
+                                          "name": {
+                                            "type": "string",
+                                            "example": "test"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/register/{courseId}": {
+      "get": {
+        "tags": ["registration"],
+        "summary": "teacher view course reservations",
+        "description": "老師檢視課程所有預約",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "description": "course id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Registration"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "User": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "example": "user-1"
+                                  },
+                                  "email": {
+                                    "type": "string",
+                                    "example": "test@569"
+                                  },
+                                  "nickname": {
+                                    "type": "string",
+                                    "example": "testing"
+                                  },
+                                  "avatar": {
+                                    "type": "string",
+                                    "example": "https://example.com"
+                                  }
+                                }
+                              },
+                              "Course": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "example": "testing"
+                                  },
+                                  "category": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "example": "多益"
+                                    }
+                                  },
+                                  "link": {
+                                    "type": "string",
+                                    "example": "https://example.com"
+                                  },
+                                  "teacherId": {
+                                    "type": "integer",
+                                    "example": 1
+                                  },
+                                  "startAt": {
+                                    "type": "string",
+                                    "example": "2024-03-09 10:02:41"
+                                  },
+                                  "duration": {
+                                    "type": "integer",
+                                    "example": 30
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["registration"],
+        "summary": "register the course",
+        "description": "學生預約課程",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "courseId": 114
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "description": "course id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "114"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "studentId": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "courseId": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "example": "2024-03-09 10:02:41"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "example": "2024-03-09 10:02:41"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["registration"],
+        "summary": "student comment and rate for the course",
+        "description": "學生對課程評分及評論",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "studentId": 1,
+                  "courseId": 114,
+                  "comment": "123",
+                  "rating": 4
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "description": "course id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "114"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "courseId": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "studentId": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "rating": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "comment": {
+                          "type": "string",
+                          "example": "testing"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "example": "2024-03-09 10:02:41"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "example": "2024-03-09 10:02:41"
+                        },
+                        "Course": {
+                          "type": "object",
+                          "properties": {
+                            "startAt": {
+                              "type": "string",
+                              "example": "2024-03-09 10:02:41"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["registration"],
+        "summary": "student cancel the course reservation",
+        "description": "學生取消課程預約",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "description": "course id",
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "example": "114"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "courseId": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "studentId": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "rating": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "comment": {
+                          "type": "string",
+                          "example": "testing"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "example": "2024-03-09 10:02:41"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "example": "2024-03-09 10:02:41"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/login/facebook": {
+      "get": {
+        "tags": ["OAuth"],
+        "summary": "Facebook OAuth login page",
+        "description": "顯示Facebook OAuth登入頁",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/oauth/redirect/facebook": {
+      "get": {
+        "tags": ["OAuth"],
+        "summary": "Facebook authenticate and redirect",
+        "description": "Facebook驗證成功後，可進入家教平台首頁",
+        "security": [
+          {
+            "OAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/login/google": {
+      "get": {
+        "tags": ["OAuth"],
+        "summary": "Google OAuth login page",
+        "description": "顯示Google OAuth登入頁",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/oauth/redirect/google": {
+      "get": {
+        "tags": ["OAuth"],
+        "summary": "Google authenticate and redirect",
+        "description": "Google驗證成功後，可進入家教平台首頁",
+        "security": [
+          {
+            "OAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "signup": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "example": 46
+              },
+              "name": {
+                "type": "string",
+                "example": "test"
+              },
+              "email": {
+                "type": "string",
+                "example": "test@569"
+              },
+              "updatedAt": {
+                "type": "string",
+                "example": "2024-03-09 10:02:41"
+              },
+              "createdAt": {
+                "type": "string",
+                "example": "2024-03-09 10:02:41"
+              }
+            }
+          }
+        }
+      },
+      "signin": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "example": 1
+              },
+              "isTeacher": {
+                "type": "boolean",
+                "example": 0
+              },
+              "email": {
+                "type": "string",
+                "example": "user1@example.com"
+              },
+              "token": {
+                "type": "string",
+                "example": "user token"
+              }
+            }
+          }
+        }
+      },
+      "home": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "totalPages": {
+                "type": "integer",
+                "example": 4
+              },
+              "currentPage": {
+                "type": "integer",
+                "example": 1
+              },
+              "prev": {
+                "type": "integer",
+                "example": 1
+              },
+              "next": {
+                "type": "integer",
+                "example": 2
+              },
+              "pages": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              },
+              "teachers": {
+                "type": "array",
+                "items": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Teacher"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "teaching_categories": {
+                          "type": "array",
+                          "items": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/Teaching_category"
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "Category": {
+                                    "type": "object",
+                                    "properties": {
+                                      "name": {
+                                        "type": "string",
+                                        "example": "多益"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "ratingAverage": {
+                          "type": "number",
+                          "example": 2.3
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "students": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "studentId": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "studyHours": {
+                      "type": "number",
+                      "example": 7.5
+                    },
+                    "User": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "example": "huh"
+                        },
+                        "nickname": {
+                          "type": "string",
+                          "example": "df"
+                        },
+                        "avatar": {
+                          "type": "string",
+                          "example": "https://example.com"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Student": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "user-1"
+          },
+          "email": {
+            "type": "string",
+            "example": "user1@example.com"
+          },
+          "nickname": {
+            "type": "string",
+            "example": "testing"
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "selfIntro": {
+            "type": "string",
+            "example": "test"
+          }
+        }
+      },
+      "Teacher": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "user-1"
+          },
+          "nation": {
+            "type": "string",
+            "example": "BG"
+          },
+          "nickname": {
+            "type": "string",
+            "example": "testing"
+          },
+          "avatar": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "teachStyle": {
+            "type": "string",
+            "example": "testing"
+          },
+          "selfIntro": {
+            "type": "string",
+            "example": "test"
+          }
+        }
+      },
+      "Course": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "teacherId": {
+            "type": "integer",
+            "example": 1
+          },
+          "category": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "example": "多益"
+            }
+          },
+          "name": {
+            "type": "string",
+            "example": "testing"
+          },
+          "intro": {
+            "type": "string",
+            "example": "testing"
+          },
+          "link": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "duration": {
+            "type": "integer",
+            "example": 30
+          },
+          "image": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "startAt": {
+            "type": "string",
+            "example": "2024-03-09 10:02:41"
+          }
+        }
+      },
+      "Registration": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "integer",
+            "example": 1
+          },
+          "courseId": {
+            "type": "integer",
+            "example": 1
+          },
+          "rating": {
+            "type": "integer",
+            "example": 1
+          },
+          "comment": {
+            "type": "string",
+            "example": "testing"
+          }
+        }
+      },
+      "Teaching_category": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "integer",
+            "example": 1
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "多益"
+          }
+        }
+      },
+      "error": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "error"
+          },
+          "message": {
+            "type": "string",
+            "example": "error message"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "OAuth": {
+        "type": "oauth2",
+        "flows": {
+          "implicit": {
+            "authorizationUrl": "http://localhost:3000/oauth/authorize",
+            "scopes": {
+              "write:user": "modify your data in your account",
+              "read:user": "read your data"
+            }
+          }
+        }
+      }
+    }
+  }
+}
