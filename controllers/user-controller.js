@@ -150,7 +150,7 @@ module.exports = {
           return item
         })
       user.dataValues.studyRank = rank.findIndex(i => i.dataValues.studentId === +id) + 1
-      user.dataValues.studyHours = rank[user.dataValues.studyRank - 1].dataValues.studyHours
+      user.dataValues.studyHours = rank[user.dataValues.studyRank - 1].dataValues.studyHours / 60
       res.json({ status: 'success', data: user })
     } catch (err) {
       next(err)
@@ -275,15 +275,15 @@ module.exports = {
       const { params: { id }, user: { id: userId }, file } = req
 
       if (+id !== userId) return errorMsg(res, 403, 'Insufficient permissions. Update failed!')
-      if (!name) return errorMsg(res, 401, 'Please enter name.')
-      if (!Array.isArray(category) || category?.length < 1) return errorMsg(res, 401, 'Please enter categoryId array.')
+      if (!name) return errorMsg(res, 400, 'Please enter name.')
+      if (!Array.isArray(category) || category?.length < 1) return errorMsg(res, 400, 'Please enter categoryId array.')
       const hasDuplicates = category.filter((value, index, self) => self.indexOf(value) !== index).length > 0
-      if (hasDuplicates) return errorMsg(res, 401, 'CategoryId has duplicates.')
-      if (!booleanObjects(whichDay)) return errorMsg(res, 401, 'Which day input was invalid.')
+      if (hasDuplicates) return errorMsg(res, 400, 'CategoryId has duplicates.')
+      if (!booleanObjects(whichDay)) return errorMsg(res, 400, 'Which day input was invalid.')
 
       let categoryId = await Category.findAll({ raw: true })
       categoryId = categoryId.map(i => i.id)
-      if (!category.every(i => categoryId.includes(i))) return errorMsg(res, 401, 'Please enter correct categoryId.')
+      if (!category.every(i => categoryId.includes(i))) return errorMsg(res, 400, 'Please enter correct categoryId.')
 
       const [filePath, user] = await Promise.all([
         imgurUpload(file), User.findByPk(id), teaching_category.destroy({ where: { teacher_id: id } })
