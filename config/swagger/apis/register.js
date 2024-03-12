@@ -2,8 +2,7 @@ module.exports = {
   '/register/all': {
     get: {
       tags: ['registration'],
-      summary: 'student view all course reservations',
-      description: '學生檢視所有課程預約',
+      summary: '學生檢視所有課程預約',
       security: [
         {
           bearerAuth: []
@@ -114,8 +113,7 @@ module.exports = {
   '/register/{courseId}': {
     get: {
       tags: ['registration'],
-      summary: 'teacher view course reservations',
-      description: '老師檢視課程所有預約',
+      summary: '老師查看課程的預約情形',
       security: [
         {
           bearerAuth: []
@@ -125,12 +123,11 @@ module.exports = {
         {
           name: 'courseId',
           in: 'path',
-          description: 'course id',
+          description: '請輸入欲查看的課程 id',
           schema: {
             type: 'integer'
           },
-          required: true,
-          example: '1'
+          required: true
         }
       ],
       responses: {
@@ -232,8 +229,7 @@ module.exports = {
     },
     post: {
       tags: ['registration'],
-      summary: 'register the course',
-      description: '學生預約課程',
+      summary: '學生預約課程',
       requestBody: {
         content: {
           'application/json': {
@@ -255,12 +251,11 @@ module.exports = {
         {
           name: 'courseId',
           in: 'path',
-          description: 'course id',
+          description: '請輸入註冊的課程 id',
           schema: {
             type: 'integer'
           },
-          required: true,
-          example: '114'
+          required: true
         }
       ],
       responses: {
@@ -327,8 +322,8 @@ module.exports = {
     },
     put: {
       tags: ['registration'],
-      summary: 'student comment and rate for the course',
-      description: '學生對課程評分及評論',
+      summary: '學生對課程評分及評論',
+      description: '課程評分為必填',
       requestBody: {
         content: {
           'application/json': {
@@ -430,8 +425,7 @@ module.exports = {
     },
     delete: {
       tags: ['registration'],
-      summary: 'student cancel the course reservation',
-      description: '學生取消課程預約',
+      summary: '學生取消課程預約',
       security: [
         {
           bearerAuth: []
@@ -441,12 +435,11 @@ module.exports = {
         {
           name: 'courseId',
           in: 'path',
-          description: 'course id',
+          description: '請輸入取消註冊的課程 id',
           schema: {
             type: 'integer'
           },
-          required: true,
-          example: '114'
+          required: true
         }
       ],
       responses: {

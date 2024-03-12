@@ -2,8 +2,7 @@ module.exports = {
   '/course/{courseId}': {
     get: {
       tags: ['course'],
-      summary: 'browse course page',
-      description: '檢視課程頁面',
+      summary: '檢視課程頁面',
       security: [
         {
           bearerAuth: []
@@ -13,12 +12,11 @@ module.exports = {
         {
           name: 'courseId',
           in: 'path',
-          description: 'course id',
+          description: '請輸入欲檢視的課程 id',
           schema: {
             type: 'integer'
           },
-          required: true,
-          example: '1'
+          required: true
         }
       ],
       responses: {
@@ -88,8 +86,8 @@ module.exports = {
     },
     put: {
       tags: ['course'],
-      summary: 'teacher update course data',
-      description: '老師修改課程資料',
+      summary: '老師修改課程資料',
+      description: '可編輯欄位包含 category(陣列), name, intro, link, duration, image, startAt 其中 category(陣列), name, intro, link, duration 跟 startAt 為必填',
       requestBody: {
         content: {
           'application/json': {
@@ -117,12 +115,11 @@ module.exports = {
         {
           name: 'courseId',
           in: 'path',
-          description: 'course id',
+          description: '請輸入欲修改的課程 id',
           schema: {
             type: 'integer'
           },
-          required: true,
-          example: '114'
+          required: true
         }
       ],
       responses: {
@@ -169,8 +166,8 @@ module.exports = {
   '/course': {
     post: {
       tags: ['course'],
-      summary: 'teacher create the course',
-      description: '老師建立課程',
+      summary: '老師建立課程',
+      description: '欄位 category(陣列), name, intro, link, duration 跟 startAt 為必填',
       requestBody: {
         content: {
           'application/json': {

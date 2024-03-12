@@ -21,6 +21,9 @@ const externalDocs = {
 const servers = [
   {
     url: 'http://localhost:3000'
+  },
+  {
+    url: 'http://34.125.232.84:3000'
   }
 ]
 

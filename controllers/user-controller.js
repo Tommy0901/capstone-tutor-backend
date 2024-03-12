@@ -94,7 +94,8 @@ module.exports = {
           order: [['studyHours', 'DESC']]
         }),
         Category.findAll({
-          attributes: ['id', 'name']
+          attributes: ['id', 'name'],
+          order: [['id', 'ASC']]
         })
       ])
       const ratingAverage = await Registration.findAll({
