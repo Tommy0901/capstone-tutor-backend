@@ -1,8 +1,9 @@
 const express = require('express')
-const router = express.Router()
+const swaggerUi = require('swagger-ui-express')
 const userController = require('../controllers/user-controller')
 const courseController = require('../controllers/course-controller')
 const registerController = require('../controllers/register-controller')
+const swaggerDocument = require('../config/swagger')
 const admin = require('./modules/admin')
 
 const { apiErrorHandler } = require('../middlewares/error-handler')
@@ -10,6 +11,9 @@ const { authenticated, authenticatedAdmin, facebookOauth, facebookOauthRedirect 
 const { googleOauth, googleOauthRedirect } = require('../middlewares/auth-handler')
 const { upload } = require('../middlewares/upload-file-handler')
 
+const router = express.Router()
+
+router.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 router.get('/login/facebook', facebookOauth)
 router.get('/oauth/redirect/facebook', facebookOauthRedirect)
 router.get('/login/google', googleOauth)
