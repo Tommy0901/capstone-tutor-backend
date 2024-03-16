@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs')
 const { faker } = require('@faker-js/faker')
 const { User } = require('../models')
 const { uploadImageToGCS, deleteFileInGCS } = require('../helpers/image-helpers')
+const onePieceCharacters = require('../config/one-piece')
 
 const countries = require('../config/conuntries')
 const countryCodes = Object.keys(countries)
@@ -26,7 +27,7 @@ module.exports = {
       if (index < 10) {
         // Insert regular users
         return {
-          name: `user-${index + 1}`,
+          name: onePieceCharacters[index],
           nation: countryCodes[Math.floor(Math.random() * countryCodes.length)],
           email: `user${index + 1}@example.com`,
           password: hash,
@@ -48,7 +49,7 @@ module.exports = {
       } else {
         // Insert teachers
         return {
-          name: `teacher-${index - 9}`,
+          name: onePieceCharacters[index],
           nation: countryCodes[Math.floor(Math.random() * countryCodes.length)],
           email: `teacher${index - 9}@example.com`,
           password: hash,

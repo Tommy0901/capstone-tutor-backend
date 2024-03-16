@@ -1,8 +1,9 @@
+const dayjs = require('dayjs')
 const { Course, User, Registration, Category } = require('../models')
 const { errorMsg } = require('../middlewares/message-handler')
 const { imgurUpload } = require('../helpers/image-helpers')
 const { emptyObjectValues } = require('../helpers/datatype-helpers')
-const { currentTaipeiTime } = require('../helpers/time-helpers')
+const { currentTaipeiTime, formatCourseDate } = require('../helpers/time-helpers')
 
 module.exports = {
   postCourse: async (req, res, next) => {
@@ -15,7 +16,10 @@ module.exports = {
       const missingField = { category, name, intro, link, duration, startAt }
       if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required') // 找出沒有填寫的欄位
 
-      let categoryArr = await Category.findAll({ raw: true })
+      let [categoryArr, weekDays] = await Promise.all([
+        Category.findAll({ raw: true }),
+        User.findByPk(id, { attributes: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], raw: true })
+      ])
       const categoryIdArr = categoryArr.map(category => category.id)
       if (!category.every(i => categoryIdArr.includes(i))) return errorMsg(res, 400, 'Please input correct category!')
 
@@ -26,6 +30,10 @@ module.exports = {
 
       const now = new Date()
       if (startAt <= currentTaipeiTime(now)) return errorMsg(res, 400, 'Course opening time should not be before today!')
+
+      const weekDayArr = Object.values(weekDays).map(day => day === 1)
+      const courseDay = dayjs(startAt).day()
+      if (!weekDayArr[courseDay]) return errorMsg(res, 400, "Class schedule conflicts with teacher's availability")
 
       const filePath = await imgurUpload(file) || ''
 
@@ -43,7 +51,7 @@ module.exports = {
         startAt
       })
 
-      createdCourse.dataValues.startAt = currentTaipeiTime(createdCourse.dataValues.startAt)
+      createdCourse.dataValues.startAt = formatCourseDate(createdCourse.dataValues.startAt)
       const { createdAt, updatedAt, ...rest } = createdCourse.dataValues
       createdCourse.dataValues = rest
 
@@ -69,7 +77,7 @@ module.exports = {
       })
       if (!course) return errorMsg(res, 404, "Course didn't exist!")
 
-      course.dataValues.startAt = currentTaipeiTime(course.dataValues.startAt)
+      course.dataValues.startAt = formatCourseDate(course.dataValues.startAt)
 
       res.json({ status: 'success', data: course })
     } catch (err) {
@@ -81,7 +89,10 @@ module.exports = {
       const { params: { courseId: id }, user: { id: teacherId } } = req
       const { body: { category, name, intro, link, duration, startAt }, file } = req
 
-      let categoryArr = await Category.findAll({ raw: true })
+      let [categoryArr, weekDays] = await Promise.all([
+        Category.findAll({ raw: true }),
+        User.findByPk(teacherId, { attributes: ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'], raw: true })
+      ])
       const categoryIdArr = categoryArr.map(category => category.id)
       if (!category.every(i => categoryIdArr.includes(i))) return errorMsg(res, 400, 'Please input correct category!')
 
@@ -92,6 +103,10 @@ module.exports = {
 
       const now = new Date()
       if (startAt <= currentTaipeiTime(now)) return errorMsg(res, 400, 'Course opening time should not be before today!')
+
+      const weekDayArr = Object.values(weekDays).map(day => day === 1)
+      const courseDay = dayjs(startAt).day()
+      if (!weekDayArr[courseDay]) return errorMsg(res, 400, "Class schedule conflicts with teacher's availability")
 
       const [filePath, course] = await Promise.all([
         imgurUpload(file),
@@ -116,7 +131,7 @@ module.exports = {
         startAt
       })
 
-      updatedCourse.dataValues.startAt = currentTaipeiTime(updatedCourse.dataValues.startAt)
+      updatedCourse.dataValues.startAt = formatCourseDate(updatedCourse.dataValues.startAt)
       const { createdAt, updatedAt, price, ...rest } = updatedCourse.dataValues
       updatedCourse.dataValues = rest
 
