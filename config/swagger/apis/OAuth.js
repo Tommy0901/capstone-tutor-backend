@@ -21,7 +21,7 @@ module.exports = {
       description: 'Facebook驗證成功後，可進入家教平台首頁',
       security: [
         {
-          OAuth: []
+          FacebookOAuth: []
         }
       ],
       responses: {
@@ -68,7 +68,7 @@ module.exports = {
       description: 'Google驗證成功後，可進入家教平台首頁',
       security: [
         {
-          OAuth: []
+          GoogleOAuth: []
         }
       ],
       responses: {

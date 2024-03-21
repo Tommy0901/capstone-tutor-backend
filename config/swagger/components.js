@@ -4,14 +4,26 @@ const securitySchemes = {
     scheme: 'bearer',
     bearerFormat: 'JWT'
   },
-  OAuth: {
+  FacebookOAuth: {
     type: 'oauth2',
     flows: {
       implicit: {
-        authorizationUrl: 'http://localhost:3000/oauth/authorize',
+        authorizationUrl: 'http://localhost:3000/login/facebook',
         scopes: {
-          'write:user': 'modify your data in your account',
-          'read:user': 'read your data'
+          displayName: 'access user displayName',
+          email: 'access user email'
+        }
+      }
+    }
+  },
+  GoogleOAuth: {
+    type: 'oauth2',
+    flows: {
+      implicit: {
+        authorizationUrl: 'http://localhost:3000/login/google',
+        scopes: {
+          profile: 'access user profile data',
+          email: 'access user email'
         }
       }
     }
