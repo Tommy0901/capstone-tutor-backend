@@ -1,11 +1,18 @@
 const imgur = require('imgur')
 const axios = require('axios')
 
+if (process.env.NODE_ENV !== 'production') require('dotenv').config()
+
 const { Storage } = require('@google-cloud/storage')
+const { createApi } = require('unsplash-js')
 
 const storage = new Storage({
   projectId: 'silver-fragment-411909',
   keyFilename: '/home/welcome/.ssh/silver-fragment-411909-86d979044673.json' // 替換成你的服務帳戶金鑰路徑
+})
+
+const unsplash = createApi({
+  accessKey: process.env.UNSPLASH_KEY
 })
 
 const bucketName = 'test_upload_image' // 替換成你的 GCS 存儲桶名稱
@@ -69,5 +76,28 @@ module.exports = {
         }
       })()
     })
+  },
+  getUserPhotos: async () => {
+    // 串接 unsplash 的圖片
+    try {
+      const photos = await Promise.all([
+        unsplash.search.getPhotos({
+          query: 'portrait',
+          page: 1,
+          perPage: 30
+        }),
+        unsplash.search.getPhotos({
+          query: 'lady',
+          page: 1,
+          perPage: 4,
+          orientation: 'portrait'
+        })
+      ])
+
+      const userImages = photos.flatMap(photo => photo.response.results.map(result => result.urls.small))
+      return userImages
+    } catch (err) {
+      console.error(err)
+    }
   }
 }
