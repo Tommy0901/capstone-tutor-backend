@@ -4,10 +4,10 @@ const { faker } = require('@faker-js/faker')
 const { User } = require('../models')
 const { uploadImageToGCS, deleteFileInGCS } = require('../helpers/image-helpers')
 const onePieceCharacters = require('../config/one-piece')
+const { getUserPhotos } = require('../helpers/image-helpers')
 
 const countries = require('../config/conuntries')
 const countryCodes = Object.keys(countries)
-const API_URL = 'https://loremflickr.com/320/240/people'
 
 const availableDays = [
   { mon: 1, tue: 1, wed: 1, thu: 0, fri: 0, sat: 0, sun: 0 },
@@ -22,7 +22,8 @@ module.exports = {
   async up (queryInterface, Sequelize) {
     const count = await User.count()
     const hash = await bcrypt.hash('12345678', 10)
-    await Promise.all(Array.from({ length: 34 }).map((_, i) => (uploadImageToGCS(API_URL + `?/random=${Math.random() * 100}`, i + 1 + count))))
+    const avatars = await getUserPhotos()
+    await Promise.all(Array.from({ length: 34 }).map((_, i) => (uploadImageToGCS(avatars[i], i + 1 + count))))
     const data = Array.from({ length: 34 }, (_, index) => {
       if (index < 10) {
         // Insert regular users
