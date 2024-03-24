@@ -33,7 +33,7 @@ module.exports = {
           email: `user${index + 1}@example.com`,
           password: hash,
           nickname: faker.lorem.word(5),
-          avatar: `https://storage.googleapis.com/test_upload_image/${index + 1 + count}.jpg`,
+          avatar: `https://storage.googleapis.com/capstone-tutor/${index + 1 + count}.jpg`,
           is_teacher: false,
           teach_style: '',
           self_intro: faker.lorem.paragraph(),
@@ -55,7 +55,7 @@ module.exports = {
           email: `teacher${index - 9}@example.com`,
           password: hash,
           nickname: faker.lorem.word(5),
-          avatar: `https://storage.googleapis.com/test_upload_image/${index + 1 + count}.jpg`,
+          avatar: `https://storage.googleapis.com/capstone-tutor/${index + 1 + count}.jpg`,
           is_teacher: true,
           teach_style: faker.lorem.paragraph(),
           self_intro: faker.lorem.paragraph(),
@@ -73,9 +73,7 @@ module.exports = {
 
   async down (queryInterface, Sequelize) {
     const count = await User.count()
-    for (let i = 0; i < 34; i++) {
-      deleteFileInGCS(count - i)
-    }
+    await Promise.all(Array.from({ length: 34 }).map((_, i) => (deleteFileInGCS(count - i))))
     await queryInterface.bulkDelete('Users', null)
   }
 }

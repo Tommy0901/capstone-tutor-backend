@@ -15,7 +15,7 @@ const unsplash = createApi({
   accessKey: process.env.UNSPLASH_KEY
 })
 
-const bucketName = 'test_upload_image' // 替換成你的 GCS 存儲桶名稱
+const bucketName = 'capstone-tutor' // 替換成你的 GCS 存儲桶名稱
 
 const uploadToGCS = async (fileBuffer, remoteFilePath) => {
   try {
@@ -82,15 +82,14 @@ module.exports = {
     try {
       const photos = await Promise.all([
         unsplash.search.getPhotos({
-          query: 'portrait',
+          query: 'student portrait',
           page: 1,
-          perPage: 30
+          perPage: 10
         }),
         unsplash.search.getPhotos({
-          query: 'lady',
+          query: 'teacher portrait',
           page: 1,
-          perPage: 4,
-          orientation: 'portrait'
+          perPage: 24
         })
       ])
 
