@@ -50,25 +50,22 @@ module.exports = {
     try {
       const { params: { courseId }, user: { id: teacherId } } = req
 
-      const [course, courseRegisters] = await Promise.all([
-        Course.findByPk(courseId),
-        Registration.findAll({
-          attributes: ['studentId', 'courseId', 'rating', 'comment'],
-          where: { courseId },
-          include: [
-            {
-              model: User,
-              attributes: ['id', 'name', 'email', 'nickname', 'avatar']
-            },
-            {
-              model: Course,
-              attributes: ['name', 'category', 'link', 'teacherId', 'startAt', 'duration']
-            }
-          ]
-        })
-      ])
+      const courseRegisters = await Registration.findAll({
+        attributes: ['studentId', 'courseId', 'rating', 'comment'],
+        where: { courseId },
+        include: [
+          {
+            model: User,
+            attributes: ['id', 'name', 'email', 'nickname', 'avatar']
+          },
+          {
+            model: Course,
+            attributes: ['name', 'category', 'link', 'teacherId', 'startAt', 'duration']
+          }
+        ]
+      })
 
-      if (!course) return errorMsg(res, 400, "Course didn't exist!")
+      if (!courseRegisters[0]) return errorMsg(res, 400, "Course didn't exist!")
       const courseTeacherId = courseRegisters[0].dataValues.Course.teacherId
       if (courseTeacherId !== teacherId) return errorMsg(res, 403, 'Unable to browse this course booking records.')
 
