@@ -49,6 +49,7 @@ module.exports = {
   getCourseRegisters: async (req, res, next) => {
     try {
       const { params: { courseId }, user: { id: teacherId } } = req
+
       const courseRegisters = await Registration.findAll({
         attributes: ['studentId', 'courseId', 'rating', 'comment'],
         where: { courseId },
@@ -63,6 +64,8 @@ module.exports = {
           }
         ]
       })
+
+      if (!courseRegisters[0]) return errorMsg(res, 400, "Course didn't exist!")
       const courseTeacherId = courseRegisters[0].dataValues.Course.teacherId
       if (courseTeacherId !== teacherId) return errorMsg(res, 403, 'Unable to browse this course booking records.')
 

@@ -12,6 +12,7 @@ module.exports = {
       const { body: { category, name, intro, link, duration, startAt }, file } = req
 
       if (!isTeacher) return errorMsg(res, 403, 'Insufficient permission. Unable to create a new course!')
+      if (!Array.isArray(category) || category?.length < 1) return errorMsg(res, 400, 'Please enter categoryId array!')
 
       const missingField = { category, name, intro, link, duration, startAt }
       if (!emptyObjectValues(missingField)) return errorMsg(res, 400, 'All fields are required') // 找出沒有填寫的欄位
@@ -88,6 +89,8 @@ module.exports = {
     try {
       const { params: { courseId: id }, user: { id: teacherId } } = req
       const { body: { category, name, intro, link, duration, startAt }, file } = req
+
+      if (!Array.isArray(category) || category?.length < 1) return errorMsg(res, 400, 'Please enter categoryId array!')
 
       let [categoryArr, weekDays] = await Promise.all([
         Category.findAll({ raw: true }),
