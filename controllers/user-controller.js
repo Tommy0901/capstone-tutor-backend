@@ -19,7 +19,7 @@ module.exports = {
       if (!name || !email || !password) return errorMsg(res, 401, 'Please enter name, email and password!')
       if (password !== passwordCheck) return errorMsg(res, 401, 'Passwords do not match!')
 
-      if (await User.findOne({ where: { email } })) return errorMsg(res, 401, 'Email already exists!')
+      if (await User.findOne({ where: { email } }) || email === 'root@example.com') return errorMsg(res, 401, 'Email already exists!')
 
       const createdUser = await User.create({ name, email, password: await bcrypt.hash(password, 10) })
       const { password: removePassword, ...user } = createdUser.toJSON()
