@@ -37,7 +37,7 @@ module.exports = {
 
       const findOptions = { where: { email }, raw: true }
       const user = await User.findOne(findOptions) || await Admin.findOne(findOptions)
-      if (!user) return errorMsg(res, 401, 'email 或密碼錯誤')
+      if (!user) return errorMsg(res, 401, 'Incorrect email or password')
 
       await bcrypt.compare(password, user.password)
         ? res.json({
@@ -49,7 +49,7 @@ module.exports = {
             token: jwt.sign({ id: user.id, isTeacher: user.isTeacher }, process.env.JWT_SECRET, { expiresIn: '30d' })
           }
         })
-        : errorMsg(res, 401, 'email 或密碼錯誤')
+        : errorMsg(res, 401, 'Incorrect email or password')
     } catch (err) {
       next(err)
     }
@@ -287,7 +287,7 @@ module.exports = {
 
       let categoryId = await Category.findAll({ raw: true })
       categoryId = categoryId.map(i => i.id)
-      if (!category.every(i => categoryId.includes(i))) return errorMsg(res, 400, 'Please enter correct categoryId.')
+      if (!category.every(i => categoryId.includes(+i))) return errorMsg(res, 400, 'Please enter correct categoryId.')
 
       const [filePath, user] = await Promise.all([
         imgurUpload(file), User.findByPk(id), teaching_category.destroy({ where: { teacher_id: id } })
