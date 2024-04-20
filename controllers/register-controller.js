@@ -83,8 +83,11 @@ module.exports = {
     try {
       const { params: { courseId }, user: { id: studentId } } = req
 
-      const course = await Course.findByPk(courseId)
+      const course = await Course.findByPk(courseId, { raw: true })
       if (!course) return errorMsg(res, 404, "Unable to register the course. Because the course didn't exist!")
+      if (studentId === course.teacherId) {
+        return errorMsg(res, 403, 'The teacher cannot register for their own course.')
+      }
 
       const now = new Date()
       const openingTime = currentTaipeiTime(course.dataValues.startAt)

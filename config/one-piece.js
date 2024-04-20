@@ -4,7 +4,7 @@ const onePieceCharacters = [
   'Nami',
   'Usopp',
   'Vinsmoke Sanji',
-  'Tony Tony Chopper',
+  'Chopper',
   'Nico Robin',
   'Franky',
   'Brook',
@@ -29,10 +29,10 @@ const onePieceCharacters = [
   'Crocodile',
   'Nico Robin',
   'Enel',
-  'Kuzan (Aokiji)',
-  'Fujitora (Issho)',
+  'Kuzan',
+  'Fujitora',
   'Borsalino',
-  'Akainu (Sakazuki)',
+  'Akainu',
   'Smoker',
   'Tashigi'
 ]
